@@ -32,3 +32,6 @@ size_limits:
   max_files: 100
   max_total_bytes: 50000000000   # "up to 100 files and a total volume of 50GB (50,000,000,000 bytes)"
   note: "Larger uploads (up to 200 GB) can be requested via the storage quota process."
+
+readme:
+  required: false   # README is good practice, not a deposit requirement here

@@ -45,9 +45,10 @@ class Context:
     doc_files: List[str] = field(default_factory=list)
 
 
-README_RE = re.compile(r"^readme([._-].*)?(\.(md|markdown|txt|rst|pdf|html))?$", re.I)
+README_RE = re.compile(r"(?<![a-z])read[ _-]?me(?![a-z]).*\.(md|markdown|txt|rst|rtf|pdf|html|docx?)$|^read[ _-]?me$", re.I)
 DICT_RE = re.compile(r"(dictionary|codebook|data[_-]?dict|variables|schema|field[_-]?descriptions)", re.I)
 TEXT_DOC_EXT = {".md", ".markdown", ".txt", ".rst", ".csv", ".tsv", ".json", ".yaml", ".yml", ".html"}
+BINARY_DOC_EXT = {".pdf", ".doc", ".docx"}
 LICENSE_RE = re.compile(r"^(license|licence|copying)(\.(md|txt))?$", re.I)
 
 
@@ -61,22 +62,22 @@ def _read_text(path: Path, limit: int = 2_000_000) -> str:
 def prepare(ctx: Context) -> None:
     """Locate README, data dictionaries and other docs used by several checks."""
     top = [f for f in ctx.files if "/" not in f.rel]
-    readmes = [f for f in top if README_RE.match(Path(f.rel).name)]
+    readmes = [f for f in top if README_RE.search(Path(f.rel).name)]
     if not readmes:  # accept a README one folder down, e.g. data/README.md
-        readmes = [f for f in ctx.files if README_RE.match(Path(f.rel).name)]
+        readmes = [f for f in ctx.files if README_RE.search(Path(f.rel).name)]
     readmes.sort(key=lambda f: (f.ext != ".md", f.rel.count("/"), f.rel))
     ctx.readme = readmes[0] if readmes else None
     corpus = []
     for f in ctx.files:
         name = Path(f.rel).name
-        is_doc = README_RE.match(name) or (DICT_RE.search(name) and f.ext in TEXT_DOC_EXT | {".xlsx"})
+        is_doc = README_RE.search(name) or (DICT_RE.search(name) and f.ext in TEXT_DOC_EXT | {".xlsx"})
         if is_doc:
             ctx.doc_files.append(f.rel)
             if f.ext == ".xlsx":
                 corpus.append(" ".join(f.columns + [v for r in f.sample for v in r.values()]))
-            elif f.ext != ".pdf":
+            elif f.ext not in BINARY_DOC_EXT:
                 corpus.append(_read_text(f.path))
-    if ctx.readme and ctx.readme.ext != ".pdf":
+    if ctx.readme and ctx.readme.ext not in BINARY_DOC_EXT:
         ctx.readme_text = _read_text(ctx.readme.path)
     ctx.docs_text = "\n".join(corpus).lower()
 
@@ -220,7 +221,7 @@ def check_readme(ctx: Context) -> List[Finding]:
                            f"Found {ctx.readme.rel}.", f"Convert the README to {fmts[0]} (Markdown).", src,
                            [ctx.readme.rel]))
     if not ctx.readme_text.strip():
-        out.append(Finding("readme", WARN, "README could not be read as text (PDF or empty)",
+        out.append(Finding("readme", WARN, "README could not be read as text (PDF/Word or empty)",
                            "Topic and coverage checks were skipped.", "Provide README.md (plain text).", src))
         return out
     text = ctx.readme_text.lower()
@@ -254,7 +255,9 @@ def check_readme(ctx: Context) -> List[Finding]:
                     gaps[f.rel] = miss
         if gaps:
             n = sum(len(v) for v in gaps.values())
-            detail = "; ".join(f"{k}: {', '.join(v[:8])}{' …' if len(v) > 8 else ''}" for k, v in gaps.items())
+            short = lambda c: c if len(c) <= 40 else c[:37] + "..."
+            detail = "; ".join(f"{k}: {', '.join(short(c) for c in v[:8])}{' …' if len(v) > 8 else ''}"
+                               for k, v in gaps.items())
             out.append(Finding("readme", WARN, f"{n} column(s) not defined in README/data dictionary",
                                detail,
                                "Add a data dictionary (e.g. data_dictionary.csv: column, description, units, allowed values, missing code).",

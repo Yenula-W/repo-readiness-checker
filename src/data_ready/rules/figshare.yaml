@@ -30,3 +30,6 @@ size_limits:
   source: "https://info.figshare.com/user-guide/file-size-limits-and-storage/"
   max_file_bytes: 20000000000    # 20 GB per file
   max_total_bytes: 20000000000   # 20 GB private storage on figshare.com accounts
+
+readme:
+  required: false   # README is good practice, not a deposit requirement here
