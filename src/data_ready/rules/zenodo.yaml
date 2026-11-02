@@ -1,0 +1,34 @@
+id: zenodo
+name: Zenodo
+extends: _common
+homepage: https://zenodo.org
+verified: "2026-11-02"
+sources:
+  - https://help.zenodo.org/docs/deposit/create-new-upload/
+  - https://help.zenodo.org/docs/deposit/describe-records/licenses/
+  - https://help.zenodo.org/docs/deposit/manage-files/
+
+required_metadata:
+  - {field: resource_type, label: "Resource type", why: "Required in 'Basic information' (e.g. Dataset).", source: "https://help.zenodo.org/docs/deposit/create-new-upload/"}
+  - {field: title, label: "Title", why: "Required in 'Basic information'.", source: "https://help.zenodo.org/docs/deposit/create-new-upload/"}
+  - {field: publication_date, label: "Publication date", why: "Required in 'Basic information' (YYYY-MM-DD).", source: "https://help.zenodo.org/docs/deposit/create-new-upload/"}
+  - {field: creators, label: "Creators", min_count: 1, why: "Required in 'Basic information'.", source: "https://help.zenodo.org/docs/deposit/create-new-upload/"}
+  - {field: license, label: "License", why: "\"The license field is a required field.\" Zenodo defaults to CC-BY-4.0 if you do not pick one.", source: "https://help.zenodo.org/docs/deposit/describe-records/licenses/"}
+
+recommended_metadata:
+  - {field: description, label: "Description", why: "Shown on the record page and indexed for search.", source: "https://help.zenodo.org/docs/deposit/describe-records/"}
+  - {field: keywords, label: "Keywords", min_count: 1, why: "Improves discoverability.", source: "https://help.zenodo.org/docs/deposit/describe-records/"}
+  - {field: funding, label: "Funding", why: "Links the record to the grant (needed for funder reporting).", source: "https://help.zenodo.org/docs/deposit/describe-records/"}
+  - {field: version, label: "Version", why: "Lets later uploads become new versions of the same concept DOI.", source: "https://help.zenodo.org/docs/deposit/describe-records/"}
+  - {field: creator_affiliation, label: "Creator affiliations", why: "Optional per creator, but expected by most funders.", source: "https://help.zenodo.org/docs/deposit/describe-records/"}
+  - {field: creator_orcid, label: "Creator ORCID iDs", why: "Unambiguous author identification.", source: "https://help.zenodo.org/docs/deposit/describe-records/"}
+
+license:
+  required: true
+  source: "https://help.zenodo.org/docs/deposit/describe-records/licenses/"
+
+size_limits:
+  source: "https://help.zenodo.org/docs/deposit/manage-files/"
+  max_files: 100
+  max_total_bytes: 50000000000   # "up to 100 files and a total volume of 50GB (50,000,000,000 bytes)"
+  note: "Larger uploads (up to 200 GB) can be requested via the storage quota process."

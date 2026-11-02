@@ -1,0 +1,64 @@
+# Shared rules inherited by every target via `extends: _common`.
+# A target file can override any top-level key.
+# Every rule carries a `source` URL so a data steward can trace it.
+
+id: _common
+name: Common good practice
+
+formats:
+  # Extension -> plain-English suggestion. These are flagged as "warn".
+  discouraged:
+    .xlsx: {suggest: "Export each sheet to CSV (UTF-8). Keep the .xlsx only if formulas/formatting are essential, and explain them in the README.", source: "https://datadryad.org/help/guides/best_practices"}
+    .xls:  {suggest: "Export each sheet to CSV (UTF-8).", source: "https://datadryad.org/help/guides/best_practices"}
+    .xlsm: {suggest: "Export each sheet to CSV; macros will not run for most reusers.", source: "https://datadryad.org/help/guides/best_practices"}
+    .mat:  {suggest: "Also provide an open format: HDF5 (.h5), NetCDF (.nc), or CSV. MATLAB v7.3 .mat files are HDF5 and can be read with h5py.", source: "https://www.loc.gov/preservation/resources/rfs/data.html"}
+    .sav:  {suggest: "Also provide CSV plus a codebook (SPSS .sav is proprietary).", source: "https://www.loc.gov/preservation/resources/rfs/data.html"}
+    .dta:  {suggest: "Also provide CSV plus a codebook (Stata .dta is proprietary).", source: "https://www.loc.gov/preservation/resources/rfs/data.html"}
+    .sas7bdat: {suggest: "Also provide CSV plus a codebook (SAS format is proprietary).", source: "https://www.loc.gov/preservation/resources/rfs/data.html"}
+    .rds:  {suggest: "Also provide CSV (or Parquet) so non-R users can read it.", source: "https://www.loc.gov/preservation/resources/rfs/data.html"}
+    .rdata: {suggest: "Also provide CSV (or Parquet) so non-R users can read it.", source: "https://www.loc.gov/preservation/resources/rfs/data.html"}
+    .pkl:  {suggest: "Pickle files are Python-only and unsafe to load. Provide CSV, Parquet, JSON or HDF5 instead.", source: "https://docs.python.org/3/library/pickle.html"}
+    .pickle: {suggest: "Pickle files are Python-only and unsafe to load. Provide CSV, Parquet, JSON or HDF5 instead.", source: "https://docs.python.org/3/library/pickle.html"}
+    .doc:  {suggest: "Convert to PDF/A, Markdown or plain text.", source: "https://datadryad.org/help/guides/best_practices"}
+    .docx: {suggest: "Convert to PDF/A, Markdown or plain text.", source: "https://datadryad.org/help/guides/best_practices"}
+    .ppt:  {suggest: "Convert to PDF.", source: "https://www.loc.gov/preservation/resources/rfs/"}
+    .pptx: {suggest: "Convert to PDF.", source: "https://www.loc.gov/preservation/resources/rfs/"}
+    .accdb: {suggest: "Export tables to CSV and document relations in the README.", source: "https://www.loc.gov/preservation/resources/rfs/data.html"}
+    .mdb:  {suggest: "Export tables to CSV and document relations in the README.", source: "https://www.loc.gov/preservation/resources/rfs/data.html"}
+    .opj:  {suggest: "Origin project files are proprietary. Export data to CSV and figures to PDF/PNG/SVG.", source: "https://www.loc.gov/preservation/resources/rfs/data.html"}
+    .pzfx: {suggest: "GraphPad Prism files are proprietary. Export data to CSV.", source: "https://www.loc.gov/preservation/resources/rfs/data.html"}
+    .jnb:  {suggest: "SigmaPlot files are proprietary. Export data to CSV.", source: "https://www.loc.gov/preservation/resources/rfs/data.html"}
+  # Extensions the repository refuses outright. Flagged as "fail".
+  rejected: {}
+
+file_naming:
+  source: "https://datadryad.org/help/guides/best_practices"
+  max_name_length: 64
+  # Files that should never be deposited.
+  junk_patterns: [".DS_Store", "Thumbs.db", "desktop.ini", "~$*", "*.tmp", "*.swp", ".~lock.*", "__MACOSX", "*.pyc", ".ipynb_checkpoints"]
+
+readme:
+  required: true
+  source: "https://datadryad.org/help/guides/best_practices"
+  # Each topic passes if any keyword appears in the README (case-insensitive).
+  topics:
+    - {id: file_list, label: "File list / structure", keywords: ["file", "folder", "directory", "structure", "contents"]}
+    - {id: variables, label: "Variable / column definitions", keywords: ["variable", "column", "field", "data dictionary", "codebook"]}
+    - {id: units, label: "Units of measurement", keywords: ["unit", "units", "measured in"]}
+    - {id: missing, label: "Missing data codes", keywords: ["missing", "n/a", "na ", "null", "no data", "-999"]}
+  describe_every_file: true
+  describe_every_column: true
+
+checksums:
+  source: "https://www.rfc-editor.org/rfc/rfc8493"  # BagIt payload manifests (manifest-sha256.txt)
+  manifest_names: ["manifest-sha256.txt", "manifest-md5.txt", "checksums.txt", "checksums.md5", "checksums.sha256", "md5sum.txt", "sha256sum.txt", "MD5SUMS", "SHA256SUMS"]
+
+sensitive_data:
+  severity: warn
+  source: "https://www.hhs.gov/hipaa/for-professionals/special-topics/de-identification/index.html"
+  message: "Possible direct identifiers found. HIPAA Safe Harbor lists 18 identifier types (names, emails, dates of birth, medical record numbers, phone numbers, addresses...) that must be removed for data to count as de-identified."
+
+size_limits: {}
+license: {}
+required_metadata: []
+recommended_metadata: []

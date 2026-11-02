@@ -1,0 +1,19 @@
+title: Leaf temperature of maize under drought stress in a greenhouse, 2025
+creators:
+  - name: Doe, Jane
+    affiliation: Example University
+    email: jane.doe@example.edu
+    orcid: 0000-0002-1825-0097
+description: >
+  Hourly leaf temperature from 12 potted maize plants under well-watered and drought
+  treatments. Includes a data dictionary and checksums. Suitable for reuse in plant
+  stress phenotyping and model validation.
+keywords: [maize, drought, leaf temperature, phenotyping]
+subjects: [Agricultural biotechnology]
+license: CC-BY-4.0
+publication_date: "2026-01-15"
+resource_type: dataset
+funding: [R01GM000000]
+methods: Thermocouples attached to the third leaf, logged every minute, averaged hourly.
+related_identifiers: ["10.1234/example.preprint"]
+version: "1.0"

@@ -1,0 +1,32 @@
+id: figshare
+name: Figshare (figshare.com)
+extends: _common
+homepage: https://figshare.com
+verified: "2026-11-02"
+sources:
+  - https://info.figshare.com/user-guide/figshare-metadata-schema-overview/
+  - https://info.figshare.com/user-guide/file-size-limits-and-storage/
+notes: "Institutional Figshare instances may add custom required fields; check your institution's portal."
+
+required_metadata:
+  - {field: title, label: "Title", min_length: 3, why: "Required (3-1000 characters).", source: "https://info.figshare.com/user-guide/figshare-metadata-schema-overview/"}
+  - {field: creators, label: "Authors", min_count: 1, why: "Required (1-100 authors).", source: "https://info.figshare.com/user-guide/figshare-metadata-schema-overview/"}
+  - {field: resource_type, label: "Item type", why: "Required (e.g. Dataset).", source: "https://info.figshare.com/user-guide/figshare-metadata-schema-overview/"}
+  - {field: subjects, label: "Categories", min_count: 1, why: "Required (1-100 categories).", source: "https://info.figshare.com/user-guide/figshare-metadata-schema-overview/"}
+  - {field: keywords, label: "Keywords", min_count: 1, why: "Required (1-100 keywords).", source: "https://info.figshare.com/user-guide/figshare-metadata-schema-overview/"}
+  - {field: description, label: "Description", min_length: 4, why: "Required (4-10,000 characters).", source: "https://info.figshare.com/user-guide/figshare-metadata-schema-overview/"}
+  - {field: license, label: "License", why: "Required (exactly one).", source: "https://info.figshare.com/user-guide/figshare-metadata-schema-overview/"}
+
+recommended_metadata:
+  - {field: funding, label: "Funding", why: "Optional field; needed for funder reporting.", source: "https://info.figshare.com/user-guide/figshare-metadata-schema-overview/"}
+  - {field: related_identifiers, label: "Related materials / references", why: "Optional; links the dataset to the paper.", source: "https://info.figshare.com/user-guide/figshare-metadata-schema-overview/"}
+  - {field: creator_orcid, label: "Author ORCID iDs", why: "Unambiguous author identification.", source: "https://info.figshare.com/user-guide/figshare-metadata-schema-overview/"}
+
+license:
+  required: true
+  source: "https://info.figshare.com/user-guide/figshare-metadata-schema-overview/"
+
+size_limits:
+  source: "https://info.figshare.com/user-guide/file-size-limits-and-storage/"
+  max_file_bytes: 20000000000    # 20 GB per file
+  max_total_bytes: 20000000000   # 20 GB private storage on figshare.com accounts

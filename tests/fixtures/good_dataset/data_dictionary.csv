@@ -1,0 +1,5 @@
+column,description,units,allowed_values
+plant_id,Plant identifier,,P01-P12
+treatment,Watering treatment,,control|drought
+timestamp,Start of hourly window (local time),ISO 8601,
+leaf_temp_c,Mean leaf temperature,degrees Celsius,

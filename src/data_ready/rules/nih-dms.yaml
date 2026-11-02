@@ -1,0 +1,49 @@
+id: nih-dms
+name: NIH Data Management & Sharing Policy (profile)
+extends: _common
+homepage: https://sharing.nih.gov/data-management-and-sharing-policy
+verified: "2026-11-02"
+sources:
+  - https://grants.nih.gov/grants/guide/notice-files/NOT-OD-21-013.html
+  - https://grants.nih.gov/grants/guide/notice-files/NOT-OD-21-014.html
+  - https://grants.nih.gov/policy-and-compliance/policy-topics/sharing-policies/dms/selecting-a-data-repository
+notes: >
+  This is a policy profile, not a repository. It checks that the package carries what an NIH
+  DMS Plan promises (documentation, standards, identifiers, reuse terms, privacy). Combine it
+  with the repository you will actually deposit to (e.g. --target zenodo --target nih-dms).
+
+required_metadata:
+  - {field: title, label: "Title", why: "Metadata must support discovery, reuse and citation.", source: "https://grants.nih.gov/policy-and-compliance/policy-topics/sharing-policies/dms/selecting-a-data-repository"}
+  - {field: creators, label: "Creators", min_count: 1, why: "Needed for attribution and citation.", source: "https://grants.nih.gov/policy-and-compliance/policy-topics/sharing-policies/dms/selecting-a-data-repository"}
+  - {field: description, label: "Description", why: "Element 1: describe data type, modality, aggregation and processing level.", source: "https://grants.nih.gov/grants/guide/notice-files/NOT-OD-21-014.html"}
+  - {field: funding, label: "NIH award number", why: "Shared data must be linkable to the award whose DMS Plan covers it.", source: "https://grants.nih.gov/grants/guide/notice-files/NOT-OD-21-013.html"}
+  - {field: license, label: "License / use terms", why: "Repositories should document how data may be accessed and used; reuse terms as broad as possible.", source: "https://grants.nih.gov/policy-and-compliance/policy-topics/sharing-policies/dms/selecting-a-data-repository"}
+
+recommended_metadata:
+  - {field: keywords, label: "Keywords", min_count: 1, why: "Findability via standard indexing (Element 4).", source: "https://grants.nih.gov/grants/guide/notice-files/NOT-OD-21-014.html"}
+  - {field: related_identifiers, label: "Related publications", why: "Data is due no later than the associated publication; link them.", source: "https://grants.nih.gov/grants/guide/notice-files/NOT-OD-21-013.html"}
+  - {field: methods, label: "Methods / protocol", why: "Element 1: share study protocols and data collection instruments.", source: "https://grants.nih.gov/grants/guide/notice-files/NOT-OD-21-014.html"}
+  - {field: creator_orcid, label: "Creator ORCID iDs", why: "Persistent identifiers support attribution and reuse tracking.", source: "https://grants.nih.gov/policy-and-compliance/policy-topics/sharing-policies/dms/selecting-a-data-repository"}
+
+license:
+  required: true
+  source: "https://grants.nih.gov/policy-and-compliance/policy-topics/sharing-policies/dms/selecting-a-data-repository"
+
+readme:
+  required: true
+  source: "https://grants.nih.gov/grants/guide/notice-files/NOT-OD-21-014.html"
+  topics:
+    - {id: data_type, label: "Data type / modality / processing level (Element 1)", keywords: ["raw", "processed", "modality", "data type", "aggregat", "derived"]}
+    - {id: variables, label: "Data dictionary / variable definitions (Element 3)", keywords: ["variable", "column", "data dictionary", "codebook", "field"]}
+    - {id: standards, label: "Standards used (Element 3) — or a statement that none exist", keywords: ["standard", "ontology", "schema", "format", "cde", "no consensus"]}
+    - {id: tools, label: "Software/tools needed to use the data (Element 2)", keywords: ["software", "tool", "code", "python", " r ", "matlab", "package"]}
+    - {id: units, label: "Units", keywords: ["unit", "units", "measured in"]}
+    - {id: missing, label: "Missing data codes", keywords: ["missing", "n/a", "null", "no data", "-999"]}
+    - {id: access, label: "Access / reuse limits and consent (Element 5)", keywords: ["consent", "access", "restrict", "license", "reuse", "de-identif", "deidentif"]}
+  describe_every_file: true
+  describe_every_column: true
+
+sensitive_data:
+  severity: fail
+  source: "https://grants.nih.gov/grants/guide/notice-files/NOT-OD-21-014.html"
+  message: "Element 5: protect participant privacy (de-identification, Certificates of Confidentiality) and consider controlled access. Direct identifiers must be removed before open sharing; see HIPAA Safe Harbor's 18 identifiers (https://www.hhs.gov/hipaa/for-professionals/special-topics/de-identification/index.html)."

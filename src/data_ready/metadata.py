@@ -1,0 +1,172 @@
+"""Read user metadata from common formats into one canonical dict.
+
+Canonical keys: title, creators (list of {name, affiliation, email, orcid}),
+description, keywords, license, publication_date, resource_type, subjects,
+funding, related_identifiers, methods, version, journal.
+
+Nothing here invents values: a key is only set when the source has it.
+"""
+from __future__ import annotations
+
+import json
+import re
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
+
+import yaml
+
+AUTO_NAMES = [".zenodo.json", "zenodo.json", "datacite.json", "CITATION.cff",
+              "metadata.json", "metadata.yaml", "metadata.yml", "dataset.yaml"]
+
+
+def find_metadata_file(root: Path) -> Optional[Path]:
+    for name in AUTO_NAMES:
+        p = root / name
+        if p.is_file():
+            return p
+    return None
+
+
+def _as_list(v: Any) -> List:
+    if v is None:
+        return []
+    if isinstance(v, list):
+        return v
+    if isinstance(v, str):
+        return [s.strip() for s in re.split(r"[;,]", v) if s.strip()]
+    return [v]
+
+
+def _creator(c: Any) -> Dict[str, str]:
+    if isinstance(c, str):
+        return {"name": c}
+    if not isinstance(c, dict):
+        return {}
+    name = c.get("name") or c.get("full_name")
+    if not name:
+        given = c.get("given-names") or c.get("givenName") or c.get("given_name") or ""
+        family = c.get("family-names") or c.get("familyName") or c.get("family_name") or ""
+        name = f"{family}, {given}".strip(", ") if (given or family) else None
+    aff = c.get("affiliation")
+    if isinstance(aff, list):  # DataCite: [{"name": ...}] or [str]
+        aff = "; ".join(a.get("name", "") if isinstance(a, dict) else str(a) for a in aff)
+    orcid = c.get("orcid")
+    for ni in c.get("nameIdentifiers", []) or []:
+        if isinstance(ni, dict) and "orcid" in str(ni.get("nameIdentifierScheme", "")).lower():
+            orcid = ni.get("nameIdentifier")
+    out = {"name": name, "affiliation": aff, "email": c.get("email"), "orcid": orcid}
+    return {k: v for k, v in out.items() if v}
+
+
+def _license(v: Any) -> Optional[str]:
+    if isinstance(v, dict):
+        return v.get("id") or v.get("identifier") or v.get("rightsIdentifier") or v.get("name")
+    if isinstance(v, list) and v:
+        return _license(v[0])
+    return v or None
+
+
+def normalize(raw: Dict[str, Any], fmt: str) -> Dict[str, Any]:
+    if fmt == "datacite":
+        a = raw.get("data", {}).get("attributes", raw)
+        titles = a.get("titles") or []
+        descs = a.get("descriptions") or []
+        out = {
+            "title": titles[0].get("title") if titles else None,
+            "creators": [_creator(c) for c in a.get("creators", [])],
+            "description": next((d.get("description") for d in descs
+                                 if d.get("descriptionType", "Abstract") == "Abstract"), None),
+            "methods": next((d.get("description") for d in descs
+                             if d.get("descriptionType") == "Methods"), None),
+            "keywords": [s.get("subject") for s in a.get("subjects", []) if not s.get("subjectScheme")],
+            "subjects": [s.get("subject") for s in a.get("subjects", []) if s.get("subjectScheme")],
+            "license": _license(a.get("rightsList")),
+            "publication_date": str(a.get("publicationYear") or "") or None,
+            "resource_type": (a.get("types") or {}).get("resourceTypeGeneral"),
+            "funding": [f.get("awardNumber") or f.get("funderName") for f in a.get("fundingReferences", [])],
+            "related_identifiers": [r.get("relatedIdentifier") for r in a.get("relatedIdentifiers", [])],
+            "version": a.get("version"),
+        }
+    elif fmt == "cff":
+        out = {
+            "title": raw.get("title"),
+            "creators": [_creator(c) for c in raw.get("authors", [])],
+            "description": raw.get("abstract"),
+            "keywords": _as_list(raw.get("keywords")),
+            "license": _license(raw.get("license")),
+            "publication_date": str(raw.get("date-released") or "") or None,
+            "resource_type": raw.get("type"),
+            "version": str(raw.get("version") or "") or None,
+            "related_identifiers": [i.get("value") for i in raw.get("identifiers", []) if isinstance(i, dict)],
+        }
+    else:  # zenodo (.zenodo.json / deposit metadata) or generic canonical
+        m = raw.get("metadata", raw)
+        rt = m.get("resource_type")
+        if isinstance(rt, dict):  # InvenioRDM style {"id": "dataset"}
+            rt = rt.get("id") or rt.get("type")
+        out = {
+            "title": m.get("title"),
+            "creators": [_creator(c) for c in _as_list(m.get("creators") or m.get("authors"))],
+            "description": m.get("description") or m.get("abstract"),
+            "keywords": _as_list(m.get("keywords")),
+            "license": _license(m.get("license")),
+            "publication_date": m.get("publication_date"),
+            "resource_type": m.get("upload_type") or rt or m.get("item_type"),
+            "subjects": _as_list(m.get("subjects") or m.get("categories") or m.get("research_domain")),
+            "funding": [g.get("id") if isinstance(g, dict) else g
+                        for g in _as_list(m.get("grants") or m.get("funding"))],
+            "related_identifiers": [r.get("identifier") if isinstance(r, dict) else r
+                                    for r in _as_list(m.get("related_identifiers") or m.get("related_works"))],
+            "methods": m.get("method") or m.get("methods") or m.get("notes"),
+            "version": m.get("version"),
+            "journal": m.get("journal_title") or m.get("journal"),
+        }
+        out["subjects"] = [s.get("term") if isinstance(s, dict) else s for s in out["subjects"]]
+    return {k: v for k, v in out.items() if v not in (None, "", [], {})}
+
+
+def load_metadata(path: Path) -> Tuple[Dict[str, Any], str]:
+    text = path.read_text(encoding="utf-8")
+    raw = json.loads(text) if path.suffix == ".json" else yaml.safe_load(text)
+    raw = raw or {}
+    if path.name == "CITATION.cff":
+        fmt = "cff"
+    elif "titles" in raw or "attributes" in raw.get("data", {}):
+        fmt = "datacite"
+    else:
+        fmt = "zenodo"
+    return normalize(raw, fmt), fmt
+
+
+# --- inference from the dataset itself (README / LICENSE) -------------------
+
+LICENSE_PATTERNS = [
+    ("CC0-1.0", r"CC0|Creative Commons Zero|public domain dedication"),
+    ("CC-BY-4.0", r"Attribution 4\.0 International|CC[- ]BY[- ]4\.0"),
+    ("CC-BY-SA-4.0", r"Attribution-ShareAlike 4\.0|CC[- ]BY[- ]SA"),
+    ("CC-BY-NC-4.0", r"Attribution-NonCommercial 4\.0|CC[- ]BY[- ]NC"),
+    ("MIT", r"\bMIT License\b|Permission is hereby granted, free of charge"),
+    ("Apache-2.0", r"Apache License,? Version 2\.0"),
+    ("ODbL-1.0", r"Open Database License"),
+]
+
+
+def detect_license_text(text: str) -> Optional[str]:
+    for spdx, pat in LICENSE_PATTERNS:
+        if re.search(pat, text, re.I):
+            return spdx
+    return None
+
+
+def infer_from_readme(text: str) -> Dict[str, str]:
+    """Title = first Markdown H1; description = first prose paragraph. Nothing else."""
+    out: Dict[str, str] = {}
+    m = re.search(r"^#\s+(.+)$", text, re.M)
+    if m:
+        out["title"] = m.group(1).strip()
+    for block in re.split(r"\n\s*\n", text):
+        b = block.strip()
+        if b and not b.startswith(("#", "-", "*", "|", "```", "<", "!")) and len(b) > 40:
+            out["description"] = " ".join(b.split())
+            break
+    return out

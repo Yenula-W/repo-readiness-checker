@@ -1,0 +1,58 @@
+id: dryad
+name: Dryad
+extends: _common
+homepage: https://datadryad.org
+verified: "2026-11-02"
+sources:
+  - https://datadryad.org/help/requirements/metadata
+  - https://datadryad.org/help/requirements/files
+  - https://datadryad.org/help/guides/best_practices
+
+required_metadata:
+  - {field: title, label: "Title", why: "Required. A good title is typically 8-10 words.", source: "https://datadryad.org/help/requirements/metadata"}
+  - {field: creators, label: "Authors", min_count: 1, why: "Required: name, email and primary institutional affiliation (from ROR).", source: "https://datadryad.org/help/requirements/metadata"}
+  - {field: creator_affiliation, label: "Author affiliations", why: "Required for authors (ROR-registered institution).", source: "https://datadryad.org/help/requirements/metadata"}
+  - {field: creator_email, label: "Author email", why: "Required for the main researchers.", source: "https://datadryad.org/help/requirements/metadata"}
+  - {field: description, label: "Abstract", min_length: 50, why: "Required: overview of the dataset's structure, contents, reuse potential and any legal/ethical considerations.", source: "https://datadryad.org/help/requirements/metadata"}
+  - {field: subjects, label: "Research domain", why: "Required: primary domain from the OECD Fields of Science and Technology.", source: "https://datadryad.org/help/requirements/metadata"}
+  - {field: keywords, label: "Keywords", min_count: 3, why: "Required: at least 3 keywords.", source: "https://datadryad.org/help/requirements/metadata"}
+
+recommended_metadata:
+  - {field: funding, label: "Funding", why: "Recommended: funder (ROR) and grant number(s).", source: "https://datadryad.org/help/requirements/metadata"}
+  - {field: methods, label: "Methods", why: "Recommended: equipment, tools, procedures used to generate the data.", source: "https://datadryad.org/help/requirements/metadata"}
+  - {field: related_identifiers, label: "Related works", why: "Recommended: linked article, preprint, related datasets.", source: "https://datadryad.org/help/requirements/metadata"}
+  - {field: journal, label: "Journal / manuscript", why: "Required if the data is tied to a manuscript (journal name and manuscript number or DOI).", source: "https://datadryad.org/help/requirements/metadata"}
+
+license:
+  required: false   # Dryad applies CC0 to everything; you do not choose.
+  only: ["CC0-1.0"]
+  source: "https://datadryad.org/help/requirements/files"
+  message: "Dryad publishes all data under the CC0 waiver. Files with licensing terms incompatible with CC0 are not accepted. Host code/software on Zenodo instead."
+
+formats:
+  rejected:
+    .rar: {suggest: "Re-pack as .zip, .7z or .tar.gz. Dryad does not accept RAR (proprietary).", source: "https://datadryad.org/help/requirements/files"}
+
+readme:
+  required: true
+  required_format: [".md"]
+  source: "https://datadryad.org/help/requirements/files"
+  topics:
+    - {id: summary, label: "Summary of the experimental work", keywords: ["summary", "overview", "abstract", "description", "about", "this dataset", "study", "experiment"]}
+    - {id: file_list, label: "File structure and contents", keywords: ["file", "folder", "directory", "structure", "contents"]}
+    - {id: variables, label: "Definitions of all variables and abbreviations", keywords: ["variable", "column", "abbreviation", "data dictionary", "codebook"]}
+    - {id: units, label: "Units", keywords: ["unit", "units", "measured in"]}
+    - {id: missing, label: "Missing data codes", keywords: ["missing", "n/a", "na ", "null", "no data", "-999"]}
+    - {id: sharing, label: "Links to other locations / derived-from sources", keywords: ["source", "derived", "doi", "http", "access"]}
+  describe_every_file: true
+  describe_every_column: true
+
+size_limits:
+  source: "https://datadryad.org/help/requirements/files"
+  recommended_max_file_bytes: 10000000000   # "ideally under 10 GB"
+  max_total_bytes: 2000000000000            # 2 TB per publication via web upload
+
+sensitive_data:
+  severity: fail
+  source: "https://datadryad.org/help/requirements/files"
+  message: "Dryad does not accept data containing personally identifiable information. Human subjects data must be anonymized, IRB-compliant and consented for sharing; transcripts and identifiable images/audio/video are not accepted."
