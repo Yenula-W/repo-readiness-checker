@@ -10,8 +10,13 @@ Each rule cites the official page it comes from, so a data steward or librarian 
 
 ## Quickstart
 
-Needs Python 3.9 or newer (tested on 3.9, 3.12 and 3.13). The repository is private, so `git`
-must be able to reach it (for example after `gh auth setup-git`).
+Needs Python 3.9 or newer (tested on 3.9, 3.12 and 3.13). Install the core tool with:
+
+```bash
+pip install git+https://github.com/Yenula-W/repo-readiness-checker
+```
+
+The `[excel]` extra below adds `.xlsx` reading (openpyxl). Full quickstart:
 
 ```bash
 python3 -m venv .venv && . .venv/bin/activate
@@ -97,13 +102,31 @@ python3 -m venv .venv && .venv/bin/pip install -e '.[dev]'
 There are two fixture datasets in `tests/fixtures/`: `good_dataset` and `messy_dataset`.
 See [docs/real-world-test.md](docs/real-world-test.md) for a run on five public Zenodo datasets.
 
+## Measured precision
+
+Every finding in a seeded random sample was checked by hand against the files, on public datasets
+never used during development (Zenodo, Figshare, OSF, Dataverse, Dryad-curated). The last two
+untouched rounds ran on the same code with no change between them:
+
+| Round | Datasets | Findings judged | Correct | Lowest check type |
+|---|---|---|---|---|
+| 8 | 28 | 72 | 98.6 % | license 7/8 |
+| 9 | 22 | 70 | 100 % | — |
+
+0 crashes in 460 runs on 230 public datasets. Earlier rounds, their errors and the fixes are in
+[EVALUATION.md](EVALUATION.md).
+
 ## Limitations
 
-See [EVALUATION.md](EVALUATION.md) for the held-out tests on 230 public datasets and the hand-checked precision (98.6 % and 100 % on the last two untouched rounds, which meet the ship bar).
-
 - The README checks look for keywords and names. They can tell whether a column is *mentioned*, not whether it is explained well.
-- PII detection reads only CSV/TSV/TXT and `.xlsx` files. It checks column names and the first 2,000 rows (4 MB). The header patterns are in English only, and it does not read free text, images, `.xls`, SPSS, Stata or other formats.
-- Excel parsing assumes the header is in row 1 of each sheet. Large workbooks are slow to open (about 3 s each).
+- PII detection reads only CSV/TSV/TXT and `.xlsx` files: column names, plus email, SSN and phone patterns in the first 2,000 rows (4 MB). Header patterns are English only. Postcode, birth year and coordinates are reported only next to another identifier. It does not read images, `.xls`, SPSS, Stata or other formats, and it does not replace a disclosure review.
+- Non-UTF-8 text is reported, but the real encoding (Mac Roman, DOS code pages, GBK…) is not identified.
+- A licence named only in a README list bullet (`* License: CC0`) is not read.
+- Large Excel workbooks are slow to open (about 3 s each).
 - Files inside archives are not checked; unpack them first.
 - Supported metadata formats: Zenodo (`.zenodo.json` or a record from `zenodo.org/api/records/<id>`), DataCite JSON, `CITATION.cff`, `metadata.yaml` and Frictionless `datapackage.json`. Figshare, Dataverse and OSF exports are not read. The tool tells you so instead of guessing.
 - Repository rules change. Every target records the date it was verified; check its sources again before relying on it.
+
+## License and citation
+
+MIT, see [LICENSE](LICENSE). To cite, see [CITATION.cff](CITATION.cff).

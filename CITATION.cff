@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+message: "If you use data-ready, please cite it as below."
+title: "data-ready: check a research dataset against repository requirements before deposit"
+type: software
+authors:
+  - name: "Yenula-W"
+version: 0.1.0
+date-released: 2026-11-03
+license: MIT
+repository-code: "https://github.com/Yenula-W/repo-readiness-checker"
+keywords:
+  - research data management
+  - data deposit
+  - Zenodo
+  - Dryad
+  - Figshare
+  - NIH DMS
+  - FAIR
