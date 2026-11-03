@@ -125,17 +125,30 @@ def normalize(raw: Dict[str, Any], fmt: str) -> Dict[str, Any]:
     return {k: v for k, v in out.items() if v not in (None, "", [], {})}
 
 
+class MetadataError(ValueError):
+    """The metadata file exists but cannot be parsed."""
+
+
 def load_metadata(path: Path) -> Tuple[Dict[str, Any], str]:
-    text = path.read_text(encoding="utf-8")
-    raw = json.loads(text) if path.suffix == ".json" else yaml.safe_load(text)
+    try:
+        text = path.read_bytes().decode("utf-8-sig")
+        raw = json.loads(text) if path.suffix.lower() == ".json" else yaml.safe_load(text)
+    except (UnicodeDecodeError, json.JSONDecodeError, yaml.YAMLError, OSError) as e:
+        first = str(e).splitlines()[0] if str(e) else type(e).__name__
+        raise MetadataError(f"{path.name} could not be parsed: {first}") from e
     raw = raw or {}
-    if path.name == "CITATION.cff":
+    if not isinstance(raw, dict):
+        raise MetadataError(f"{path.name} must contain a mapping of fields, not a {type(raw).__name__}")
+    if path.name.lower() == "citation.cff":
         fmt = "cff"
-    elif "titles" in raw or "attributes" in raw.get("data", {}):
+    elif "titles" in raw or isinstance(raw.get("data"), dict) and "attributes" in raw["data"]:
         fmt = "datacite"
     else:
         fmt = "zenodo"
-    return normalize(raw, fmt), fmt
+    try:
+        return normalize(raw, fmt), fmt
+    except (AttributeError, TypeError, KeyError, IndexError) as e:
+        raise MetadataError(f"{path.name} has an unexpected structure ({type(e).__name__}: {e})") from e
 
 
 # --- inference from the dataset itself (README / LICENSE) -------------------

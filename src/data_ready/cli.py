@@ -9,7 +9,7 @@ from typing import List, Optional
 
 from . import __version__, draft, report
 from .checks import FAIL, Context, run_all
-from .metadata import (detect_license_text, find_metadata_file,
+from .metadata import (MetadataError, detect_license_text, find_metadata_file,
                        infer_from_readme, load_metadata)
 from .rules_loader import available_targets, load_target
 from .scan import manifest_text, scan
@@ -20,12 +20,18 @@ def _infer(root: Path) -> dict:
     for name in ("README.md", "README.txt", "README", "readme.md", "README.rst"):
         p = root / name
         if p.is_file():
-            inferred.update(infer_from_readme(p.read_text(encoding="utf-8", errors="replace")))
+            try:
+                inferred.update(infer_from_readme(p.read_text(encoding="utf-8", errors="replace")))
+            except OSError:
+                pass
             break
     for name in ("LICENSE", "LICENSE.md", "LICENSE.txt", "LICENCE", "COPYING"):
         p = root / name
         if p.is_file():
-            lic = detect_license_text(p.read_text(encoding="utf-8", errors="replace"))
+            try:
+                lic = detect_license_text(p.read_text(encoding="utf-8", errors="replace"))
+            except OSError:
+                lic = None
             if lic:
                 inferred["license"] = lic
             break
@@ -33,6 +39,14 @@ def _infer(root: Path) -> dict:
 
 
 def cmd_check(args: argparse.Namespace) -> int:
+    try:
+        return _check(args)
+    except OSError as e:  # unwritable --out, manifest or draft location
+        print(f"error: {e.strerror or e}: {e.filename or ''}", file=sys.stderr)
+        return 2
+
+
+def _check(args: argparse.Namespace) -> int:
     root = Path(args.path).expanduser().resolve()
     if not root.is_dir():
         print(f"error: {root} is not a folder", file=sys.stderr)
@@ -45,7 +59,13 @@ def cmd_check(args: argparse.Namespace) -> int:
         return 2
 
     md_path = Path(args.metadata).resolve() if args.metadata else find_metadata_file(root)
-    metadata, md_fmt = (load_metadata(md_path) if md_path else ({}, None))
+    metadata, md_error = {}, None
+    if md_path:
+        try:
+            metadata, _ = load_metadata(md_path)
+        except MetadataError as e:
+            md_error = str(e)
+            print(f"warning: {md_error}", file=sys.stderr)
     inferred = _infer(root)
 
     if args.write_manifest:
@@ -58,7 +78,7 @@ def cmd_check(args: argparse.Namespace) -> int:
     results = {}
     for t in targets:
         ctx = Context(root=root, files=files, rules=t, metadata=metadata, inferred=inferred,
-                      metadata_path=md_path)
+                      metadata_path=md_path, metadata_error=md_error)
         results[t["id"]] = run_all(ctx)
 
     rep = report.build(str(root), targets, results, files, md_path)

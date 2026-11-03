@@ -39,24 +39,52 @@ class Context:
     metadata: Dict[str, Any]          # from the user's metadata file
     inferred: Dict[str, Any]          # from README / LICENSE (never invented)
     metadata_path: Optional[Path]
+    metadata_error: Optional[str] = None
     readme: Optional[FileInfo] = None
     readme_text: str = ""
     docs_text: str = ""               # README + data dictionaries, lower-cased
+    readme_like: Optional[FileInfo] = None  # a README under another name
     doc_files: List[str] = field(default_factory=list)
 
 
-README_RE = re.compile(r"(?<![a-z])read[ _-]?me(?![a-z]).*\.(md|markdown|txt|rst|rtf|pdf|html|docx?)$|^read[ _-]?me$", re.I)
-DICT_RE = re.compile(r"(dictionary|codebook|data[_-]?dict|variables|schema|field[_-]?descriptions)", re.I)
-TEXT_DOC_EXT = {".md", ".markdown", ".txt", ".rst", ".csv", ".tsv", ".json", ".yaml", ".yml", ".html"}
+README_RE = re.compile(r"(?<![a-z])read[ _.-]?me(?![a-z]).*\.(md|markdown|txt|rst|rtf|pdf|html|docx?)$|^read[ _-]?me$", re.I)
+# Files that often do a README's job under another name (FileDescription.docx, codebook.pdf...).
+README_LIKE_RE = re.compile(r"(file[ _-]?descriptions?|description[ _-]?of[ _-]?files|documentation|codebook|about)", re.I)
+DICT_RE = re.compile(r"(dictionary|codebook|data[_-]?dict|variables|schema|field[_-]?descriptions|metadata)", re.I)
+TEXT_DOC_EXT = {".md", ".markdown", ".txt", ".rst", ".rtf", ".csv", ".tsv", ".json", ".yaml", ".yml", ".html"}
+PROSE_EXT = {".md", ".markdown", ".txt", ".rst", ".rtf"}
 BINARY_DOC_EXT = {".pdf", ".doc", ".docx"}
 LICENSE_RE = re.compile(r"^(license|licence|copying)(\.(md|txt))?$", re.I)
+# Metadata files describe the deposit, not the data; they are not data dictionaries.
+METADATA_FILE_NAMES = {".zenodo.json", "zenodo.json", "datacite.json", "metadata.json", "metadata.yaml",
+                       "metadata.yml", "citation.cff"}
 
 
 def _read_text(path: Path, limit: int = 2_000_000) -> str:
     try:
-        return path.read_bytes()[:limit].decode("utf-8", errors="replace")
+        raw = path.read_bytes()[:limit]
     except OSError:
         return ""
+    try:
+        text = raw.decode("utf-8")
+    except UnicodeDecodeError:
+        text = raw.decode("cp1252", errors="replace")
+    if path.suffix.lower() == ".rtf":
+        text = rtf_to_text(text)
+    return text
+
+
+def rtf_to_text(rtf: str) -> str:
+    """Rough RTF to text: decode \\'hh escapes, drop control words and braces."""
+    def hexchar(m):
+        try:
+            return bytes([int(m.group(1), 16)]).decode("cp1252")
+        except (ValueError, UnicodeDecodeError):
+            return " "
+    text = re.sub(r"\\'([0-9a-fA-F]{2})", hexchar, rtf)
+    text = re.sub(r"\\(par|line)\b ?", "\n", text)
+    text = re.sub(r"\\[a-zA-Z]+-?\d* ?", "", text)
+    return text.replace("\\\n", "\n").replace("{", "").replace("}", "")
 
 
 def prepare(ctx: Context) -> None:
@@ -65,21 +93,42 @@ def prepare(ctx: Context) -> None:
     readmes = [f for f in top if README_RE.search(Path(f.rel).name)]
     if not readmes:  # accept a README one folder down, e.g. data/README.md
         readmes = [f for f in ctx.files if README_RE.search(Path(f.rel).name)]
-    readmes.sort(key=lambda f: (f.ext != ".md", f.rel.count("/"), f.rel))
+    readmes.sort(key=lambda f: (f.ext in BINARY_DOC_EXT, f.ext != ".md", f.rel.count("/"), f.rel))
     ctx.readme = readmes[0] if readmes else None
+    if ctx.readme is None:
+        ctx.readme_like = _find_readme_like(ctx, top)
     corpus = []
     for f in ctx.files:
         name = Path(f.rel).name
-        is_doc = README_RE.search(name) or (DICT_RE.search(name) and f.ext in TEXT_DOC_EXT | {".xlsx"})
+        is_doc = (README_RE.search(name) or f is ctx.readme_like
+                  or (DICT_RE.search(name) and f.ext in TEXT_DOC_EXT | {".xlsx"}
+                      and name.lower() not in METADATA_FILE_NAMES))
         if is_doc:
             ctx.doc_files.append(f.rel)
             if f.ext == ".xlsx":
                 corpus.append(" ".join(f.columns + [v for r in f.sample for v in r.values()]))
             elif f.ext not in BINARY_DOC_EXT:
                 corpus.append(_read_text(f.path))
-    if ctx.readme and ctx.readme.ext not in BINARY_DOC_EXT:
-        ctx.readme_text = _read_text(ctx.readme.path)
+    doc = ctx.readme or ctx.readme_like
+    if doc and doc.ext not in BINARY_DOC_EXT:
+        ctx.readme_text = _read_text(doc.path)
     ctx.docs_text = "\n".join(corpus).lower()
+
+
+def _find_readme_like(ctx: Context, top: List[FileInfo]) -> Optional[FileInfo]:
+    """A top-level document that does a README's job but is not named README."""
+    by_name = [f for f in top if README_LIKE_RE.search(Path(f.rel).stem)
+               and f.ext in PROSE_EXT | BINARY_DOC_EXT]
+    if by_name:
+        return sorted(by_name, key=lambda f: f.ext in BINARY_DOC_EXT)[0]
+    others = [Path(f.rel).name.lower() for f in ctx.files]
+    for f in top:
+        if f.ext in PROSE_EXT and 0 < f.size < 1_000_000:
+            text = _read_text(f.path).lower()
+            mentions = sum(1 for n in others if n != Path(f.rel).name.lower() and _mentioned(Path(n).stem, text))
+            if mentions >= 1 or re.search(r"\b(variables?|columns?)\b", text):
+                return f
+    return None
 
 
 # --- metadata --------------------------------------------------------------
@@ -131,7 +180,16 @@ def _check_field(ctx: Context, spec: Dict, required: bool) -> Finding:
 
 def check_metadata(ctx: Context) -> List[Finding]:
     out = []
-    if ctx.metadata_path is None:
+    if ctx.metadata_error:
+        out.append(Finding("metadata", WARN, "Metadata file could not be read",
+                           ctx.metadata_error + ". Fields below are reported as missing because of this.",
+                           "Fix the file's syntax (check it with a JSON/YAML validator) and run again."))
+    elif ctx.metadata_path is not None and not ctx.metadata:
+        out.append(Finding("metadata", WARN, f"No recognised fields in {ctx.metadata_path.name}",
+                           "Supported: Zenodo (.zenodo.json or a record from zenodo.org/api), DataCite JSON, "
+                           "CITATION.cff, or metadata.yaml with the field names in the README.",
+                           "Convert the file to one of the supported formats."))
+    elif ctx.metadata_path is None:
         out.append(Finding("metadata", INFO, "No metadata file found",
                            "Checked README/LICENSE instead. Supported: .zenodo.json, datacite.json, CITATION.cff, metadata.yaml.",
                            "Run with --draft-metadata to generate a starter file with TODOs."))
@@ -158,9 +216,13 @@ def check_license(ctx: Context) -> List[Finding]:
         if found and not any(o.lower().replace("-1.0", "") in lic.lower() for o in only):
             out.append(Finding("license", FAIL, f"License '{found}' is not accepted",
                                rules.get("message", ""), f"Use {', '.join(only)} or deposit elsewhere.", src))
-        else:
-            out.append(Finding("license", PASS, f"License compatible with {', '.join(only)}",
+        elif found:
+            out.append(Finding("license", PASS, f"License '{found}' is compatible with {', '.join(only)}",
                                rules.get("message", ""), source=src))
+        else:
+            out.append(Finding("license", INFO, f"No license stated; the repository applies {', '.join(only)}",
+                               rules.get("message", ""),
+                               "Make sure no file carries terms that conflict with this.", src))
         return out
     if found:
         where = "metadata" if md_lic else f"{lic_file.rel}"
@@ -195,7 +257,8 @@ def _file_described(rel: str, docs: str) -> bool:
         return True
     # A folder of many similar files can be described as a group (e.g. "images/" or "*.tif").
     for parent in p.parents:
-        if str(parent) not in (".", "") and _mentioned(str(parent) + "/", docs):
+        if str(parent) not in (".", "") and (_mentioned(str(parent) + "/", docs)
+                                             or len(parent.name) > 3 and _mentioned(parent.name, docs)):
             return True
     return f"*{p.suffix.lower()}" in docs if p.suffix else False
 
@@ -208,21 +271,32 @@ def check_readme(ctx: Context) -> List[Finding]:
     rules = ctx.rules.get("readme") or {}
     src = rules.get("source", "")
     out: List[Finding] = []
-    if ctx.readme is None:
+    fmts = rules.get("required_format")
+    if ctx.readme is None and ctx.readme_like is not None:
+        like = ctx.readme_like
+        # Dryad names a README format, so an unnamed one must still be renamed/converted.
+        sev = FAIL if fmts else WARN
+        want = f"README{fmts[0]}" if fmts else "README.md"
+        out.append(Finding("readme", sev, f"No file named README ({like.rel} looks like one)",
+                           "Reusers and curators look for a file called README first.",
+                           f"Rename or convert {like.rel} to {want}.", src, [like.rel]))
+    elif ctx.readme is None:
         sev = FAIL if rules.get("required") else WARN
         return [Finding("readme", sev, "No README found",
                         "A README is how reusers learn what each file and column means.",
                         "Add README.md at the top level describing the files, columns, units and missing-value codes.",
                         src)]
-    out.append(Finding("readme", PASS, f"README found: {ctx.readme.rel}", source=src))
-    fmts = rules.get("required_format")
-    if fmts and ctx.readme.ext not in fmts:
-        out.append(Finding("readme", FAIL, f"README must be {'/'.join(fmts)}",
-                           f"Found {ctx.readme.rel}.", f"Convert the README to {fmts[0]} (Markdown).", src,
-                           [ctx.readme.rel]))
+    else:
+        out.append(Finding("readme", PASS, f"README found: {ctx.readme.rel}", source=src))
+        if fmts and ctx.readme.ext not in fmts:
+            out.append(Finding("readme", FAIL, f"README must be {'/'.join(fmts)}",
+                               f"Found {ctx.readme.rel}.", f"Convert the README to {fmts[0]} (Markdown).", src,
+                               [ctx.readme.rel]))
     if not ctx.readme_text.strip():
-        out.append(Finding("readme", WARN, "README could not be read as text (PDF/Word or empty)",
-                           "Topic and coverage checks were skipped.", "Provide README.md (plain text).", src))
+        doc = ctx.readme or ctx.readme_like
+        out.append(Finding("readme", WARN, f"README could not be read as text ({doc.rel})",
+                           "PDF and Word files cannot be checked, so topic and coverage checks were skipped.",
+                           "Also provide the README as plain text or Markdown (README.md).", src, [doc.rel]))
         return out
     text = ctx.readme_text.lower()
     missing_topics = [t["label"] for t in rules.get("topics", [])
@@ -350,7 +424,7 @@ def check_naming(ctx: Context) -> List[Finding]:
 # --- sensitive data ----------------------------------------------------------
 
 PII_HEADERS = {
-    "personal name": r"^(first|last|full|given|family|middle|patient|participant|subject|respondent|maiden)?_?names?$|^(sur|fore)name$|^firstname$|^lastname$|^fullname$",
+    "personal name": r"^(first|last|full|given|family|middle|patient|participant|subject|respondent|maiden|person|student|employee)_?names?$|^(sur|fore)name$|^firstname$|^lastname$|^fullname$",
     "email address": r"e_?mail",
     "date of birth": r"^(dob|d_o_b|birth_?date|date_?of_?birth|birthday)$",
     "medical record number": r"^(mrn|medical_?record.*|med_?rec.*|nhs_?(no|number)|health_?plan.*)$",
@@ -359,11 +433,24 @@ PII_HEADERS = {
     "street address": r"^(address|street|street_?address|home_?address|address_?line.*|postcode|post_?code|zip|zip_?code|postal_?code)$",
     "IP address": r"^ip(_?address)?$",
 }
+UNINSPECTED_DATA_EXT = {".xls", ".sav", ".dta", ".sas7bdat", ".por", ".rds", ".rdata", ".mat", ".parquet",
+                        ".feather", ".accdb", ".mdb", ".ods", ".sqlite", ".db"}
 PII_VALUES = {
-    "email address": (re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+"), 1),
+    "email address": (re.compile(r"(?<![\w.+-])[\w.+-]{1,64}@[\w-]{1,63}\.[\w.-]{2,63}"), 1),
     "US SSN": (re.compile(r"^\d{3}-\d{2}-\d{4}$"), 1),
     "phone number": (re.compile(r"^(\+?\d{1,2}[ .-])?\(?\d{3}\)?[ .-]\d{3}[ .-]\d{4}$"), 3),
 }
+
+
+# A bare "name" column is often a species, site or gene name. Flag it only when the values
+# look like people: "Ada Lovelace" or "Lovelace, Ada" (every word capitalised).
+GENERIC_NAME_HEADER = re.compile(r"^names?$")
+PERSON_NAME_VALUE = re.compile(r"^[A-Z][a-z'\-]+(?: [A-Z]\.?)?(?: [A-Z][a-z'\-]+){1,2}$|^[A-Z][a-z'\-]+, [A-Z][a-z'\-]+$")
+
+
+def _looks_like_people(values: List[str]) -> bool:
+    vals = [v for v in values if v][:200]
+    return len(vals) >= 3 and sum(1 for v in vals if PERSON_NAME_VALUE.match(v)) >= 0.5 * len(vals)
 
 
 def _norm_header(h: str) -> str:
@@ -379,25 +466,41 @@ def check_sensitive(ctx: Context) -> List[Finding]:
             continue
         for col in f.columns:
             h = _norm_header(col)
+            # Cap cell length: identifiers are short, and long free text would make regexes slow.
+            values = [str(r.get(col, "")).strip()[:256] for r in f.sample]
+            if GENERIC_NAME_HEADER.match(h):
+                if _looks_like_people(values):
+                    hits[f.rel].append(f"column '{col}' contains values that look like people's names")
+                continue
             for kind, pat in PII_HEADERS.items():
                 if re.search(pat, h):
                     hits[f.rel].append(f"column '{col}' looks like {kind}")
                     break
-            values = [str(r.get(col, "")).strip() for r in f.sample]
             for kind, (rx, min_hits) in PII_VALUES.items():
                 n = sum(1 for v in values if v and rx.search(v))
                 if n >= min_hits:
                     hits[f.rel].append(f"column '{col}' has {n} value(s) that look like {kind}")
                     break
+    uninspected = [f.rel for f in ctx.files if f.ext in UNINSPECTED_DATA_EXT
+                   or (f.ext in (".xlsx", ".xlsm") and not f.columns and f.read_error)]
+    out: List[Finding] = []
+    if uninspected:
+        out.append(Finding("sensitive", INFO, f"{len(uninspected)} data file(s) could not be checked for identifiers",
+                           "This tool reads CSV/TSV/TXT and .xlsx only. Check these files by hand.",
+                           "Review these files for names, contact details, dates of birth and record numbers.",
+                           sd.get("source", ""), uninspected))
     if not hits:
-        return [Finding("sensitive", PASS, "No obvious personal identifiers in tabular files",
-                        "Heuristic only: checks column names and the first rows. It does not replace a disclosure review.",
-                        source=sd.get("source", ""))]
+        checked = sum(1 for f in ctx.files if f.columns and f.rel not in ctx.doc_files)
+        out.append(Finding("sensitive", PASS, f"No obvious personal identifiers in {checked} tabular file(s)",
+                           "Heuristic only: checks column names and the first 2,000 rows. It does not replace a disclosure review.",
+                           source=sd.get("source", "")))
+        return out
     detail = "; ".join(f"{k}: {', '.join(dict.fromkeys(v))}" for k, v in hits.items())
-    return [Finding("sensitive", sev, "Possible personal identifiers (PII) found",
-                    f"{sd.get('message', '')} Matches — {detail}",
-                    "Remove or pseudonymise these columns, or use a controlled-access repository. Confirm with your IRB/privacy office.",
-                    sd.get("source", ""), list(hits))]
+    return out + [Finding("sensitive", sev, "Possible personal identifiers (PII) found",
+                          f"Matches: {detail}. {sd.get('message', '')}",
+                          "Check these columns. If they identify people, remove or pseudonymise them, or use a "
+                          "controlled-access repository. Confirm with your IRB/privacy office.",
+                          sd.get("source", ""), list(hits))]
 
 
 # --- checksums ---------------------------------------------------------------
@@ -501,17 +604,77 @@ def check_sizes(ctx: Context) -> List[Finding]:
     return out
 
 
+ARCHIVE_EXT = (".zip", ".tar", ".tar.gz", ".tgz", ".gz", ".7z", ".rar", ".bz2", ".xz")
+
+
+def _is_archive(name: str) -> bool:
+    return name.lower().endswith(ARCHIVE_EXT)
+
+
+def check_archives(ctx: Context) -> List[Finding]:
+    """Archives hide their contents from every other check, so say what was and was not looked at."""
+    fn = ctx.rules.get("file_naming") or {}
+    archives = [f for f in ctx.files if _is_archive(f.rel)]
+    if not archives:
+        return []
+    out: List[Finding] = []
+    broken = [f.rel for f in archives if f.read_error and f.read_error.startswith("archive")]
+    if broken:
+        out.append(Finding("archives", WARN, f"{len(broken)} archive(s) could not be opened",
+                           "The file may be corrupt or truncated.", "Re-create the archive and test that it opens.",
+                           files=broken))
+    junk, nested = [], []
+    for f in archives:
+        for m in f.archive_members or []:
+            parts = m.split("/")
+            if any(fnmatch.fnmatch(p, pat) for p in parts for pat in fn.get("junk_patterns", [])):
+                junk.append(f"{f.rel}: {m}")
+            elif _is_archive(m):
+                nested.append(f"{f.rel}: {m}")
+    if junk:
+        out.append(Finding("archives", WARN, f"{len(junk)} system/temporary file(s) inside archives",
+                           "; ".join(junk[:5]) + (" …" if len(junk) > 5 else ""),
+                           "Re-create the archive without __MACOSX/.DS_Store and similar files.", fn.get("source", ""),
+                           sorted({j.split(":")[0] for j in junk})))
+    if nested:
+        out.append(Finding("archives", WARN, f"{len(nested)} archive(s) nested inside other archives",
+                           "; ".join(nested[:5]) + (" …" if len(nested) > 5 else ""),
+                           "Unpack nested archives so reusers can see and preview the files.",
+                           files=sorted({n.split(":")[0] for n in nested})))
+    out.append(Finding("archives", INFO, f"Files inside {len(archives)} archive(s) were not checked",
+                       "README, format, naming and identifier checks only look at unpacked files.",
+                       "Unpack archives before running this check, or check their contents by hand.",
+                       files=[f.rel for f in archives]))
+    return out
+
+
 def unreadable(ctx: Context) -> List[Finding]:
-    bad = [f for f in ctx.files if f.read_error]
+    bad = [f for f in ctx.files if f.read_error and not f.read_error.startswith("archive")]
     if not bad:
         return []
-    return [Finding("encoding", WARN, f"{len(bad)} file(s) had read problems",
-                    "; ".join(f"{f.rel}: {f.read_error}" for f in bad[:10]),
-                    "Save text/CSV files as UTF-8.", files=[f.rel for f in bad])]
+    enc = [f for f in bad if f.read_error.startswith("not valid UTF-8")]
+    links = [f for f in bad if f.is_symlink]
+    other = [f for f in bad if f not in enc and f not in links]
+    out = []
+    if links:
+        out.append(Finding("encoding", WARN, f"{len(links)} symbolic link(s) were not followed",
+                           "Repositories store real files, not links, so linked content would be missing from the deposit.",
+                           "Replace each link with the file it points to, or remove it.", files=[f.rel for f in links]))
+    if enc:
+        out.append(Finding("encoding", WARN, f"{len(enc)} text file(s) are not UTF-8",
+                           "They were read as Windows-1252/Latin-1; accented characters may display wrongly for others.",
+                           "Re-save these files as UTF-8.", "https://www.loc.gov/preservation/digital/formats/fdd/fdd000285.shtml",
+                           [f.rel for f in enc]))
+    if other:
+        out.append(Finding("encoding", WARN, f"{len(other)} file(s) could not be fully read",
+                           "; ".join(f"{f.rel}: {f.read_error}" for f in other[:10]),
+                           "Check that these files open correctly; they were skipped by some checks.",
+                           files=[f.rel for f in other]))
+    return out
 
 
 ALL_CHECKS = [check_metadata, check_license, check_readme, check_formats, check_naming,
-              check_sensitive, check_checksums, check_sizes, unreadable]
+              check_sensitive, check_archives, check_checksums, check_sizes, unreadable]
 
 
 def run_all(ctx: Context) -> List[Finding]:

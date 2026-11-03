@@ -107,7 +107,7 @@ def test_messy_dataset_problems_found(tmp_path):
     assert ("checksums", "warn") in by
     t = titles(f, "warn")
     assert ".mat" in t and "spaces" in t and "system/temporary" in t and "empty" in t
-    pii = next(x for x in f if x.check == "sensitive")
+    pii = next(x for x in f if x.check == "sensitive" and "PII" in x.title)
     for word in ("personal name", "date of birth", "email", "medical record"):
         assert word in pii.detail
 
@@ -121,7 +121,7 @@ def test_pii_value_detection_without_suspicious_header(tmp_path):
     (tmp_path / "README.md").write_text("# x\n")
     (tmp_path / "t.csv").write_text("id,contact\n1,a@b.org\n2,c@d.org\n")
     f = run(tmp_path, "zenodo")
-    assert "email" in next(x for x in f if x.check == "sensitive").detail
+    assert "email" in next(x for x in f if x.check == "sensitive" and "PII" in x.title).detail
 
 
 def test_species_name_is_not_pii(tmp_path):

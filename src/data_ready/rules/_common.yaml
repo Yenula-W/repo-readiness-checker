@@ -28,6 +28,7 @@ formats:
     .opj:  {suggest: "Origin project files are proprietary. Export data to CSV and figures to PDF/PNG/SVG.", source: "https://www.loc.gov/preservation/resources/rfs/data.html"}
     .pzfx: {suggest: "GraphPad Prism files are proprietary. Export data to CSV.", source: "https://www.loc.gov/preservation/resources/rfs/data.html"}
     .jnb:  {suggest: "SigmaPlot files are proprietary. Export data to CSV.", source: "https://www.loc.gov/preservation/resources/rfs/data.html"}
+    .rar:  {suggest: "RAR is a proprietary archive format many users cannot open. Re-pack as .zip, .7z or .tar.gz.", source: "https://www.loc.gov/preservation/resources/rfs/"}
   # Extensions the repository refuses outright. Flagged as "fail".
   rejected: {}
 

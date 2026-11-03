@@ -12,7 +12,7 @@ ICON = {PASS: "PASS", WARN: "WARN", FAIL: "FAIL", INFO: "INFO"}
 CATEGORY_TITLES = {
     "metadata": "Metadata", "license": "License", "readme": "README & documentation",
     "formats": "File formats", "naming": "File naming", "sensitive": "Sensitive data",
-    "checksums": "Checksums", "size": "File sizes", "encoding": "Encoding",
+    "checksums": "Checksums", "archives": "Archives", "size": "File sizes", "encoding": "File readability",
 }
 
 
