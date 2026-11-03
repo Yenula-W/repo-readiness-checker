@@ -1,0 +1,192 @@
+[
+ {
+  "source": "zenodo",
+  "id": "5638382",
+  "why": "German publication survey raw CSV, not UTF-8"
+ },
+ {
+  "source": "zenodo",
+  "id": "12608420",
+  "why": "German data-stewardship survey, not UTF-8"
+ },
+ {
+  "source": "zenodo",
+  "id": "21820838",
+  "why": "German data-literacy survey export, not UTF-8"
+ },
+ {
+  "source": "zenodo",
+  "id": "6861995",
+  "why": "HU Berlin RDM survey, Readme.txt not UTF-8"
+ },
+ {
+  "source": "zenodo",
+  "id": "7770196",
+  "why": "German master's survey raw CSVs, not UTF-8"
+ },
+ {
+  "source": "zenodo",
+  "id": "7242938",
+  "why": "Single CSV, not UTF-8, no README"
+ },
+ {
+  "source": "zenodo",
+  "id": "3750142",
+  "why": "Spanish car sales CSV, not UTF-8"
+ },
+ {
+  "source": "zenodo",
+  "id": "14586020",
+  "why": "Spanish student survey CSV, not UTF-8"
+ },
+ {
+  "source": "zenodo",
+  "id": "6558007",
+  "why": "Italian app survey TSV, UTF-16"
+ },
+ {
+  "source": "zenodo",
+  "id": "13895307",
+  "why": "Italian sustainability CSVs, not UTF-8"
+ },
+ {
+  "source": "zenodo",
+  "id": "1216737",
+  "why": "French open-access survey, UTF-16 txt"
+ },
+ {
+  "source": "zenodo",
+  "id": "4671856",
+  "why": "Catalan fuel prices CSVs, not UTF-8"
+ },
+ {
+  "source": "zenodo",
+  "id": "18852759",
+  "why": "Spanish OJS stats CSV, not UTF-8 + xls"
+ },
+ {
+  "source": "zenodo",
+  "id": "15608495",
+  "why": "README.rtf"
+ },
+ {
+  "source": "zenodo",
+  "id": "5918885",
+  "why": "Readme.rtf"
+ },
+ {
+  "source": "zenodo",
+  "id": "5565205",
+  "why": "README.rtf"
+ },
+ {
+  "source": "zenodo",
+  "id": "4972239",
+  "why": "README rtf + xls"
+ },
+ {
+  "source": "zenodo",
+  "id": "4962122",
+  "why": "README rtf + xlsx"
+ },
+ {
+  "source": "zenodo",
+  "id": "23916150",
+  "why": "README as PDF"
+ },
+ {
+  "source": "zenodo",
+  "id": "23881475",
+  "why": "Variable docs as docx"
+ },
+ {
+  "source": "zenodo",
+  "id": "23897804",
+  "why": "README_2.md + codebook + CHANGELOG"
+ },
+ {
+  "source": "zenodo",
+  "id": "10463074",
+  "why": "Survey raw data with IP address, birth, postcode columns"
+ },
+ {
+  "source": "zenodo",
+  "id": "23072614",
+  "why": "Synthetic EHR with birth dates"
+ },
+ {
+  "source": "zenodo",
+  "id": "4946620",
+  "why": "Animal newborn list with birth column"
+ },
+ {
+  "source": "zenodo",
+  "id": "5879313",
+  "why": "Corresponding-author data with email/address columns"
+ },
+ {
+  "source": "zenodo",
+  "id": "23122187",
+  "why": "Aggregate births by postcode"
+ },
+ {
+  "source": "zenodo",
+  "id": "4449681",
+  "why": "Synthetic patient appointments with lat/postcode"
+ },
+ {
+  "source": "zenodo",
+  "id": "15745734",
+  "why": "Entity-linking table with postcodes"
+ },
+ {
+  "source": "zenodo",
+  "id": "23889561",
+  "why": "PubPeer survey answers + email templates"
+ },
+ {
+  "source": "osf",
+  "id": "y4kxs",
+  "why": "participants.csv + README.txt"
+ },
+ {
+  "source": "osf",
+  "id": "rs98y",
+  "why": "Qualtrics raw export + docx survey"
+ },
+ {
+  "source": "osf",
+  "id": "wa2xu",
+  "why": "Several txt READMEs and codebooks + xlsx"
+ },
+ {
+  "source": "osf",
+  "id": "5vgbj",
+  "why": "Anonymous survey CSV + xlsx mapping"
+ },
+ {
+  "source": "osf",
+  "id": "kvu3d",
+  "why": "Single data.csv, no README"
+ },
+ {
+  "source": "figshare",
+  "id": "34872900",
+  "why": "Anonymised survey CSVs + data dictionary"
+ },
+ {
+  "source": "figshare",
+  "id": "34741380",
+  "why": "'README for X.txt' per file"
+ },
+ {
+  "source": "figshare",
+  "id": "34634055",
+  "why": "Survey CSV + codebook + README"
+ },
+ {
+  "source": "figshare",
+  "id": "34700118",
+  "why": "Sampling locations, single CSV"
+ }
+]
