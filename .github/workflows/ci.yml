@@ -16,7 +16,8 @@ jobs:
           - {os: ubuntu-24.04, python: "3.9"}
           - {os: ubuntu-latest, python: "3.12"}
           - {os: ubuntu-latest, python: "3.13"}
-          - {os: macos-latest, python: "3.9"}
+          # macos-latest (arm64) runners were not acquired for hours (GitHub capacity), so macOS runs on Intel.
+          - {os: macos-15-intel, python: "3.9"}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
