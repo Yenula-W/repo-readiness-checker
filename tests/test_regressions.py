@@ -255,3 +255,62 @@ def test_non_english_readme_names(tmp_path):
     (tmp_path / "LEESMIJ.md").write_text("# Canonenquête\n\ndata_anon.csv bevat de antwoorden.\n")
     (tmp_path / "data_anon.csv").write_text("id\n1\n")
     assert [x for x in run(tmp_path) if x.check == "readme"][0].title == "README found: LEESMIJ.md"
+
+
+# --- round 4 (eval/precision_round4_untouched.csv) ---------------------------
+
+def test_cc_by_sa_legal_code_is_not_cc0():
+    # osf hq3k2: CC BY-SA 4.0 legal code ends with a note that CC's own notices are under CC0.
+    from data_ready.metadata import detect_license_text
+    text = ("Attribution-ShareAlike 4.0 International\n\n" + "terms " * 2000 +
+            "\nthe text of the Creative Commons public licenses is dedicated to the public domain under the CC0 Public Domain Dedication.")
+    assert detect_license_text(text) == "CC-BY-SA-4.0"
+    assert detect_license_text("Attribution-NonCommercial-ShareAlike 4.0 International ... CC0") == "CC-BY-NC-SA-4.0"
+
+
+def test_license_named_in_readme_licence_section(tmp_path):
+    # zenodo 23070603: README.md '## Licence' says CC0 1.0; tool said no license found.
+    from data_ready.cli import _infer
+    (tmp_path / "README.md").write_text("# Interviews\n\nSome text about drains.\n\n## Licence\n\n"
+                                        "Released under [CC0 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/).\n")
+    (tmp_path / "data.csv").write_text("a\n1\n")
+    inf = _infer(tmp_path)
+    assert inf["license"] == "CC0-1.0"
+    ctx = Context(root=tmp_path, files=scan(tmp_path), rules=load_target("figshare"), metadata={},
+                  inferred=inf, metadata_path=None)
+    lic = by_check(run_all(ctx), "license")
+    assert [x.status for x in lic] == ["pass"] and "README.md" in lic[0].title
+
+
+def test_readme_citing_other_licenses_outside_licence_section_is_ignored():
+    from data_ready.metadata import infer_from_readme
+    assert "license" not in infer_from_readme("# T\n\nWe used R (GPL) and data under CC-BY-4.0 from X.\n")
+
+
+def test_datapackage_json_is_read_as_metadata(tmp_path):
+    # zenodo 23070603 / 21404001: Frictionless datapackage.json declares the license.
+    import json
+    from data_ready.metadata import find_metadata_file, load_metadata
+    (tmp_path / "datapackage.json").write_text(json.dumps({
+        "name": "x", "title": "Street interviews", "resources": [{"path": "a.csv"}],
+        "licenses": [{"path": "https://creativecommons.org/licenses/by/4.0/"}],
+        "contributors": [{"title": "Ada Lovelace", "organization": "Uni"}]}))
+    md, fmt = load_metadata(find_metadata_file(tmp_path))
+    assert fmt == "datapackage"
+    assert md["license"] == "CC-BY-4.0" and md["title"] == "Street interviews"
+    assert md["creators"] == [{"name": "Ada Lovelace", "affiliation": "Uni"}]
+
+
+def test_missing_codes_described_without_the_word_missing(tmp_path):
+    # zenodo 23506397: "empty = quantified; ND = not detected; - (not applicable)".
+    (tmp_path / "README.md").write_text("# T\n\nFiles: a.csv. Columns: x (mg/kg).\n"
+                                        "qualifier: empty = quantified; ND = not detected; - = not applicable\n")
+    (tmp_path / "a.csv").write_text("x\n1\n")
+    assert not any("Missing data codes" in x.detail for x in by_check(run(tmp_path), "readme"))
+
+
+def test_nih_related_identifiers_label_does_not_claim_publications(tmp_path):
+    # zenodo 6522672: the only related identifier is a cited dataset.
+    (tmp_path / "a.csv").write_text("x\n1\n")
+    f = run(tmp_path, "nih-dms", {"related_identifiers": ["10.5281/zenodo.3950528"]})
+    assert not any("Related publications" in x.title for x in f)

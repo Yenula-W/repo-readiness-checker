@@ -28,7 +28,7 @@ required_metadata:
 
 recommended_metadata:
   - {field: keywords, label: "Keywords", min_count: 1, why: "Findability via standard indexing (Element 4).", source: "https://grants.nih.gov/grants/guide/notice-files/NOT-OD-21-014.html"}
-  - {field: related_identifiers, label: "Related publications", why: "Data is due no later than the associated publication; link them.", source: "https://grants.nih.gov/grants/guide/notice-files/NOT-OD-21-013.html"}
+  - {field: related_identifiers, label: "Related identifiers (e.g. publications)", why: "Data is due no later than the associated publication; link them.", source: "https://grants.nih.gov/grants/guide/notice-files/NOT-OD-21-013.html"}
   - {field: methods, label: "Methods / protocol", why: "Element 1: share study protocols and data collection instruments.", source: "https://grants.nih.gov/grants/guide/notice-files/NOT-OD-21-014.html"}
   - {field: creator_orcid, label: "Creator ORCID iDs", why: "Persistent identifiers support attribution and reuse tracking.", source: "https://grants.nih.gov/policy-and-compliance/policy-topics/sharing-policies/dms/selecting-a-data-repository"}
 

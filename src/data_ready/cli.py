@@ -24,6 +24,8 @@ def _infer(root: Path) -> dict:
                 inferred.update(infer_from_readme(p.read_text(encoding="utf-8", errors="replace")))
             except OSError:
                 pass
+            if "license" in inferred:
+                inferred["license_from"] = name
             break
     for name in ("LICENSE", "LICENSE.md", "LICENSE.txt", "LICENCE", "COPYING"):
         p = root / name
@@ -33,7 +35,7 @@ def _infer(root: Path) -> dict:
             except OSError:
                 lic = None
             if lic:
-                inferred["license"] = lic
+                inferred["license"], inferred["license_from"] = lic, name
             break
     return inferred
 
@@ -133,7 +135,7 @@ def build_parser() -> argparse.ArgumentParser:
     c.add_argument("path", help="dataset folder")
     c.add_argument("--target", "-t", action="append", required=True,
                    help="target id (zenodo, dryad, figshare, nih-dms) or path to a rules YAML; repeatable")
-    c.add_argument("--metadata", "-m", help="metadata file (.zenodo.json, datacite.json, CITATION.cff, metadata.yaml)")
+    c.add_argument("--metadata", "-m", help="metadata file (.zenodo.json, datacite.json, CITATION.cff, metadata.yaml, datapackage.json)")
     c.add_argument("--out", "-o", help="write readiness-report.md and readiness-report.json here")
     c.add_argument("--format", choices=["summary", "markdown", "json"], default="summary")
     c.add_argument("--draft-metadata", action="append", choices=["zenodo", "datacite"],

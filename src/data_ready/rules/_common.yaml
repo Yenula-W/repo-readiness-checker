@@ -46,7 +46,7 @@ readme:
     - {id: file_list, label: "File list / structure", keywords: ["file", "folder", "directory", "structure", "contents"]}
     - {id: variables, label: "Variable / column definitions", keywords: ["variable", "column", "field", "data dictionary", "codebook"]}
     - {id: units, label: "Units of measurement", keywords: ["unit", "units", "measured in"]}
-    - {id: missing, label: "Missing data codes", keywords: ["missing", "n/a", "na ", "null", "no data", "-999"]}
+    - {id: missing, label: "Missing data codes", keywords: ["missing", "n/a", "na ", "n.a.", "null", "no data", "-999", "not applicable", "not available", "not detected", "not measured", "not recorded", "blank", "empty ="]}
   describe_every_file: true
   describe_every_column: true
 

@@ -203,11 +203,11 @@ def check_metadata(ctx: Context) -> List[Finding]:
     elif ctx.metadata_path is not None and not ctx.metadata:
         out.append(Finding("metadata", WARN, f"No recognised fields in {ctx.metadata_path.name}",
                            "Supported: Zenodo (.zenodo.json or a record from zenodo.org/api), DataCite JSON, "
-                           "CITATION.cff, or metadata.yaml with the field names in the README.",
+                           "CITATION.cff, Frictionless datapackage.json, or metadata.yaml with the field names in the README.",
                            "Convert the file to one of the supported formats."))
     elif ctx.metadata_path is None:
         out.append(Finding("metadata", INFO, "No metadata file found",
-                           "Checked README/LICENSE instead. Supported: .zenodo.json, datacite.json, CITATION.cff, metadata.yaml.",
+                           "Checked README/LICENSE instead. Supported: .zenodo.json, datacite.json, CITATION.cff, metadata.yaml, datapackage.json.",
                            "Run with --draft-metadata to generate a starter file with TODOs."))
     for spec in ctx.rules.get("required_metadata", []):
         out.append(_check_field(ctx, spec, True))
@@ -224,7 +224,9 @@ def check_license(ctx: Context) -> List[Finding]:
     lic_file = next((f for f in ctx.files if "/" not in f.rel and LICENSE_RE.match(f.rel)), None)
     file_lic = detect_license_text(_read_text(lic_file.path)) if lic_file else None
     md_lic = ctx.metadata.get("license")
-    found = md_lic or file_lic
+    # A license named in the README's License section (cli._infer) counts when there is no LICENSE file.
+    readme_lic = ctx.inferred.get("license") if not lic_file else None
+    found = md_lic or file_lic or readme_lic
     only = rules.get("only")
     out = []
     if only:
@@ -248,7 +250,7 @@ def check_license(ctx: Context) -> List[Finding]:
                            "Reusers will not know which terms apply.", "Make the LICENSE file and metadata agree.",
                            src, [lic_file.rel]))
     elif found:
-        where = "metadata" if md_lic else f"{lic_file.rel}"
+        where = "metadata" if md_lic else lic_file.rel if file_lic else ctx.inferred.get("license_from", "README")
         out.append(Finding("license", PASS, f"License: {found} (from {where})", source=src))
     elif lic_file:
         out.append(Finding("license", WARN, f"{lic_file.rel} present but license not recognised",
