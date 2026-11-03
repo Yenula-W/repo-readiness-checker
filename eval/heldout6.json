@@ -1,0 +1,172 @@
+[
+ {
+  "source": "zenodo",
+  "id": "145635",
+  "why": "Leipzig opera choir CSVs, not UTF-8"
+ },
+ {
+  "source": "zenodo",
+  "id": "17458792",
+  "why": "Mexican consumer survey CSV, not UTF-8 + readme.txt"
+ },
+ {
+  "source": "zenodo",
+  "id": "20800233",
+  "why": "Spanish journal survey, CSV not UTF-8, README.docx"
+ },
+ {
+  "source": "zenodo",
+  "id": "23791522",
+  "why": "Contraceptive study, data dictionary CSV not UTF-8"
+ },
+ {
+  "source": "zenodo",
+  "id": "183129",
+  "why": "Catalan RDM survey CSV, not UTF-8"
+ },
+ {
+  "source": "zenodo",
+  "id": "19392672",
+  "why": "Portuguese data-reuse CSVs, not UTF-8"
+ },
+ {
+  "source": "zenodo",
+  "id": "4960102",
+  "why": "Sao Paulo OD survey CSVs, not UTF-8"
+ },
+ {
+  "source": "zenodo",
+  "id": "4340621",
+  "why": "German pupil motivation CSV, not UTF-8, ReadMe.pdf"
+ },
+ {
+  "source": "zenodo",
+  "id": "2612649",
+  "why": "German NAWA raw samples CSV, not UTF-8"
+ },
+ {
+  "source": "zenodo",
+  "id": "21372176",
+  "why": "German PhD folder listing txt, not UTF-8"
+ },
+ {
+  "source": "zenodo",
+  "id": "23489229",
+  "why": "README.pdf + README.md + zip"
+ },
+ {
+  "source": "zenodo",
+  "id": "23286809",
+  "why": "readme.pdf + xlsx codebook"
+ },
+ {
+  "source": "zenodo",
+  "id": "22707187",
+  "why": "README.pdf + codebook.md + LICENSE"
+ },
+ {
+  "source": "zenodo",
+  "id": "21793225",
+  "why": "README.pdf + one CSV"
+ },
+ {
+  "source": "zenodo",
+  "id": "23915831",
+  "why": "readme.txt + xlsx"
+ },
+ {
+  "source": "zenodo",
+  "id": "5023989",
+  "why": "Dryad-style CSVs, no README"
+ },
+ {
+  "source": "zenodo",
+  "id": "23917162",
+  "why": "README.md + zip"
+ },
+ {
+  "source": "zenodo",
+  "id": "17863727",
+  "why": "data.csv + rds + xlsx"
+ },
+ {
+  "source": "zenodo",
+  "id": "23916366",
+  "why": "Two scraped CSVs"
+ },
+ {
+  "source": "zenodo",
+  "id": "23264917",
+  "why": "SPSS .sav/.dat + xlsx"
+ },
+ {
+  "source": "zenodo",
+  "id": "20379403",
+  "why": "Bavarian microdata for anonymisation tests"
+ },
+ {
+  "source": "zenodo",
+  "id": "6377054",
+  "why": "Community-science volunteers (anonymised) + site coordinates"
+ },
+ {
+  "source": "zenodo",
+  "id": "23678875",
+  "why": "Gauging stations with coordinates"
+ },
+ {
+  "source": "zenodo",
+  "id": "11581466",
+  "why": "Feedback survey with email column"
+ },
+ {
+  "source": "zenodo",
+  "id": "14001094",
+  "why": "Qualtrics export with email, names, IP"
+ },
+ {
+  "source": "osf",
+  "id": "szhgy",
+  "why": "README_Codebook.md + deidentified CSV"
+ },
+ {
+  "source": "osf",
+  "id": "khyjb",
+  "why": "Behavioural xlsx + README.txt"
+ },
+ {
+  "source": "osf",
+  "id": "r37t5",
+  "why": "Deidentified xlsx + README.txt + docx"
+ },
+ {
+  "source": "osf",
+  "id": "b725z",
+  "why": "Survey workbook + 'README Codebook.txt' + interview transcripts"
+ },
+ {
+  "source": "osf",
+  "id": "yc47s",
+  "why": "CSV + README.md + R"
+ },
+ {
+  "source": "osf",
+  "id": "f9e6q",
+  "why": "README.md + codebook CSV + redacted PDFs"
+ },
+ {
+  "source": "figshare",
+  "id": "34896300",
+  "why": "Single CSV with very long name"
+ },
+ {
+  "source": "figshare",
+  "id": "33283824",
+  "why": "Soil xlsx + MIR spectra CSV"
+ },
+ {
+  "source": "figshare",
+  "id": "34900261",
+  "why": "Python code + README.md, no data"
+ }
+]
