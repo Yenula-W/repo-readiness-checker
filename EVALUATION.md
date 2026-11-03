@@ -10,7 +10,7 @@ with numbers. An item that is not fully met says so.
 | 3 | Held-out run on 20+ real inputs, zero crashes | **Met.** 26 datasets from 4 platforms, 0 crashes |
 | 4 | Hand-checked precision ≥ 90 % overall, no check type < 80 % | **Met after fixes.** Round 1: 83 %. Round 2: 64/64 correct. Encoding has only 2 findings in the whole set (bar asks for 3) |
 | 5 | Never invents or overstates | **Met after fixes.** 9 overstated or invented outputs found and fixed (listed below) |
-| 6 | CI green on GitHub, repo private | See [CI](#6-ci) |
+| 6 | CI green on GitHub, repo private | **Met.** Run 41552597005: 4/4 jobs green; repo `PRIVATE` |
 | 7 | This file | Done |
 
 ## 1. Robustness
@@ -192,8 +192,10 @@ and NIH, WARN elsewhere).
 - Python 3.9, 3.12 and 3.13 on Ubuntu
 - Python 3.9 on macOS
 
-The repository is private (`gh repo view` reports `PRIVATE`). The CI result is recorded in the
-commit that adds this line: see the Actions tab for the run on `main`.
+Run [41552597005](https://github.com/Yenula-W/repo-readiness-checker/actions/runs/41552597005) is
+green on all four jobs. The first run failed only because `ubuntu-latest` is now Ubuntu 26.04, which has
+no Python 3.9 build, so 3.9 is pinned to `ubuntu-24.04`. The repository is private (`gh repo view`
+reports `PRIVATE`).
 
 ## Known limitations
 
