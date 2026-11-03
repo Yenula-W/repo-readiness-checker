@@ -11,14 +11,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest]
-        python: ["3.9", "3.12", "3.13"]
         include:
-          - os: macos-latest
-            python: "3.9"
+          # Ubuntu 26.04 (ubuntu-latest) has no Python 3.9 build, so 3.9 runs on 24.04.
+          - {os: ubuntu-24.04, python: "3.9"}
+          - {os: ubuntu-latest, python: "3.12"}
+          - {os: ubuntu-latest, python: "3.13"}
+          - {os: macos-latest, python: "3.9"}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python }}
       - name: Install
