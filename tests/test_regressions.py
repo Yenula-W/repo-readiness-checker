@@ -339,7 +339,7 @@ def test_quoted_paper_title_and_labels_are_not_a_description():
 
 def test_excel_caption_row_is_not_the_header(tmp_path):
     # zenodo 23493423: row 1 of each sheet is a one-cell caption; the header is below it.
-    import openpyxl
+    openpyxl = pytest.importorskip("openpyxl")
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.append(["Data underlying Figs. 4-6 of the article"])
