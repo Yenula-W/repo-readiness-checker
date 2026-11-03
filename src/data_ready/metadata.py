@@ -194,6 +194,14 @@ LICENSE_PATTERNS = [
     ("MIT", r"\bMIT License\b|Permission is hereby granted, free of charge"),
     ("Apache-2.0", r"Apache License,? Version 2\.0"),
     ("ODbL-1.0", r"Open Database License"),
+    ("GPL-3.0", r"(?<!LESSER )(?<!AFFERO )GNU GENERAL PUBLIC LICENSE\s+Version 3|\bGPL-?v?3"),
+    ("GPL-2.0", r"(?<!LESSER )(?<!LIBRARY )GNU GENERAL PUBLIC LICENSE\s+Version 2|\bGPL-?v?2"),
+    ("LGPL-3.0", r"GNU LESSER GENERAL PUBLIC LICENSE\s+Version 3|\bLGPL-?v?3"),
+    ("AGPL-3.0", r"GNU AFFERO GENERAL PUBLIC LICENSE\s+Version 3|\bAGPL-?v?3"),
+    ("MPL-2.0", r"Mozilla Public License,? (?:Version|v\.?) ?2\.0"),
+    ("BSD-3-Clause", r"\bBSD 3-Clause\b|Neither the name of .{1,200}? nor the names of (?:its|the) contributors"),
+    ("BSD-2-Clause", r"\bBSD 2-Clause\b"),
+    ("Unlicense", r"This is free and unencumbered software released into the public domain"),
 ]
 
 

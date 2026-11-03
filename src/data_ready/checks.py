@@ -53,7 +53,7 @@ README_RE = re.compile(r"(?<![a-z])" + README_WORD + r"(?![a-z]).*\.(md|markdown
                        + README_WORD + r"$", re.I)
 # Files that often do a README's job under another name (FileDescription.docx, codebook.pdf...).
 README_LIKE_RE = re.compile(r"(file[ _-]?descriptions?|description[ _-]?of[ _-]?files|documentation|codebook|about)", re.I)
-DICT_RE = re.compile(r"(dictionary|codebook|data[_-]?dict|variables|schema|field[_-]?descriptions|metadata)", re.I)
+DICT_RE = re.compile(r"(dictionary|codebook|data[_-]?dict|variables|schema|field[_-]?descriptions|metadata|legend)", re.I)
 TEXT_DOC_EXT = {".md", ".markdown", ".txt", ".rst", ".rtf", ".csv", ".tsv", ".json", ".yaml", ".yml", ".html"}
 PROSE_EXT = {".md", ".markdown", ".txt", ".rst", ".rtf"}
 BINARY_DOC_EXT = {".pdf", ".doc", ".docx"}
@@ -281,7 +281,24 @@ def _column_described(col: str, docs: str) -> bool:
     if _mentioned(col, docs):
         return True
     bare = re.sub(r"\s*[\(\[][^\)\]]*[\)\]]\s*$", "", col).strip()
-    return bool(bare) and bare != col and len(bare) > 3 and _mentioned(bare, docs)
+    if bare and bare != col and len(bare) > 3 and _mentioned(bare, docs):
+        return True
+    # Survey exports label columns 'Q1. Question text' while the legend lists 'Q1' and the question.
+    m = CODED_HEADER.match(col)
+    if m:
+        code, text = m.group(1), m.group(2).strip()
+        return (len(text) > 3 and _mentioned(text, docs)) or (any(c.isdigit() for c in code) and _mentioned(code, docs))
+    return False
+
+
+CODED_HEADER = re.compile(r"^([^\s.:]{1,20})[.:]\s+(\S.*)$")
+
+
+def _topic_found(keyword: str, raw: str, lower: str) -> bool:
+    """Plain keywords match case-insensitively anywhere; 're:' keywords are regexes on the original text."""
+    if keyword.startswith("re:"):
+        return re.search(keyword[3:], raw) is not None
+    return keyword.lower() in lower
 
 
 def _file_described(rel: str, docs: str) -> bool:
@@ -336,7 +353,7 @@ def check_readme(ctx: Context) -> List[Finding]:
         return out
     text = ctx.readme_text.lower()
     missing_topics = [t["label"] for t in rules.get("topics", [])
-                      if not any(k.lower() in text for k in t["keywords"])]
+                      if not any(_topic_found(k, ctx.readme_text, text) for k in t["keywords"])]
     if missing_topics:
         out.append(Finding("readme", WARN, f"README seems to be missing {len(missing_topics)} topic(s)",
                            "Not found: " + "; ".join(missing_topics),
@@ -459,6 +476,7 @@ def check_naming(ctx: Context) -> List[Finding]:
 
 # --- sensitive data ----------------------------------------------------------
 
+# Direct identifiers: one is enough to flag a file.
 PII_HEADERS = {
     "personal name": r"^(first|last|full|given|family|middle|patient|participant|subject|respondent|maiden|person|student|employee)_?names?$|^(sur|fore)name$|^firstname$|^lastname$|^fullname$",
     "email address": r"e_?mail",
@@ -466,9 +484,44 @@ PII_HEADERS = {
     "medical record number": r"^(mrn|medical_?record.*|med_?rec.*|nhs_?(no|number)|health_?plan.*)$",
     "government ID": r"^(ssn|social_?security.*|sin|national_?insurance.*|passport.*|driver_?licen[cs]e.*)$",
     "phone number": r"^(phone|tel|telephone|mobile|cell|cell_?phone|fax|phone_?(no|number))$",
-    "street address": r"^(address|street|street_?address|home_?address|address_?line.*|postcode|post_?code|zip|zip_?code|postal_?code)$",
+    "street address": r"^(address|street|street_?address|home_?address|address_?line.*)$",
     "IP address": r"^ip(_?address)?$",
 }
+# Indirect identifiers: a postcode or a birth year alone does not identify anyone (and is common
+# in aggregate tables), so they are flagged only next to another identifier of a different kind.
+QUASI_HEADERS = {
+    "postcode": r"^(postcode|post_?code|postal_?code|zip|zip_?code)$",
+    "year of birth": r"^(birth_?year|year_?of_?birth|yob)$",
+    "location coordinates": r"^(lat|latitude|lon|long|longitude|lng)$",
+}
+# 'Q5_POSTCODE', 'RESPONDENT_IP_ADDRESS': a question code or a person word in front of an identifier.
+# Ambiguous one-word patterns (sin, cell, tel, zip, lat, long, address, street) are not matched this way.
+PII_PREFIX = re.compile(r"^([a-z]{0,3}\d+[a-z]?|respondent|participant|patient|subject|student|employee|person|"
+                        r"user|contact|parent|mother|father|guardian|child|home|resp)$")
+NO_PREFIX_MATCH = {"sin", "cell", "tel", "mobile", "fax", "zip", "lat", "lon", "long", "lng", "address", "street", "ip"}
+
+
+def _header_candidates(h: str) -> List[str]:
+    """'q5_postcode' -> ['q5_postcode', 'postcode'] when everything dropped looks like a prefix."""
+    tokens = h.split("_")
+    out = [h]
+    for i in range(1, len(tokens)):
+        if not PII_PREFIX.match(tokens[i - 1]):
+            break
+        rest = "_".join(tokens[i:])
+        if rest not in NO_PREFIX_MATCH:
+            out.append(rest)
+    return out
+
+
+def _match_header(h: str, table: Dict[str, str]) -> Optional[str]:
+    for cand in _header_candidates(h):
+        for kind, pat in table.items():
+            if re.search(pat, cand):
+                return kind
+    return None
+
+
 UNINSPECTED_DATA_EXT = {".xls", ".sav", ".dta", ".sas7bdat", ".por", ".rds", ".rdata", ".mat", ".parquet",
                         ".feather", ".accdb", ".mdb", ".ods", ".sqlite", ".db"}
 PII_VALUES = {
@@ -500,6 +553,7 @@ def check_sensitive(ctx: Context) -> List[Finding]:
     for f in ctx.files:
         if not f.columns or f.rel in ctx.doc_files:
             continue
+        quasi: Dict[str, List[str]] = defaultdict(list)
         for col in f.columns:
             h = _norm_header(col)
             # Cap cell length: identifiers are short, and long free text would make regexes slow.
@@ -508,18 +562,24 @@ def check_sensitive(ctx: Context) -> List[Finding]:
                 if _looks_like_people(values):
                     hits[f.rel].append(f"column '{col}' contains values that look like people's names")
                 continue
-            for kind, pat in PII_HEADERS.items():
-                if re.search(pat, h):
-                    filled = [v for v in values if v]
-                    masked = filled and all(re.search(r"[*]|x{2,}|#{2,}", v, re.I) for v in filled)
-                    note = f" (values appear partly masked, e.g. {filled[0]!r}; check the masking is enough)" if masked else ""
-                    hits[f.rel].append(f"column '{col}' looks like {kind}{note}")
-                    break
-            for kind, (rx, min_hits) in PII_VALUES.items():
+            kind = _match_header(h, PII_HEADERS)
+            if kind:
+                filled = [v for v in values if v]
+                masked = filled and all(re.search(r"[*]|x{2,}|#{2,}", v, re.I) for v in filled)
+                note = f" (values appear partly masked, e.g. {filled[0]!r}; check the masking is enough)" if masked else ""
+                hits[f.rel].append(f"column '{col}' looks like {kind}{note}")
+            else:
+                qkind = _match_header(h, QUASI_HEADERS)
+                if qkind:
+                    quasi[qkind].append(col)
+            for vkind, (rx, min_hits) in PII_VALUES.items():
                 n = sum(1 for v in values if v and rx.search(v))
                 if n >= min_hits:
-                    hits[f.rel].append(f"column '{col}' has {n} value(s) that look like {kind}")
+                    hits[f.rel].append(f"column '{col}' has {n} value(s) that look like {vkind}")
                     break
+        if quasi and (hits.get(f.rel) or len(quasi) >= 2):
+            for qkind, cols in quasi.items():
+                hits[f.rel].extend(f"column '{c}' looks like {qkind} (an indirect identifier in combination)" for c in cols)
     uninspected = [f.rel for f in ctx.files if f.ext in UNINSPECTED_DATA_EXT
                    or (f.ext in (".xlsx", ".xlsm") and not f.columns and f.read_error)]
     out: List[Finding] = []

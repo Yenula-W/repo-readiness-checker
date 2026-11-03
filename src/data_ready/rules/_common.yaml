@@ -45,8 +45,8 @@ readme:
   topics:
     - {id: file_list, label: "File list / structure", keywords: ["file", "folder", "directory", "structure", "contents"]}
     - {id: variables, label: "Variable / column definitions", keywords: ["variable", "column", "field", "data dictionary", "codebook"]}
-    - {id: units, label: "Units of measurement", keywords: ["unit", "units", "measured in"]}
-    - {id: missing, label: "Missing data codes", keywords: ["missing", "n/a", "na ", "n.a.", "null", "no data", "-999", "not applicable", "not available", "not detected", "not measured", "not recorded", "blank", "empty ="]}
+    - {id: units, label: "Units of measurement", keywords: ["unit", "units", "measured in", 're:(?:^|(?<=\s))\((?:mm|cm|km|m|µm|um|nm|mg|g|kg|µg|ug|ml|mL|L|l|s|sec|min|h|hr|d|%|°C|°F|K|Hz|kHz|Pa|kPa|hPa|ppm|ppb|mol|mmol|µmol|M|mM|µM|V|mV|W|kW|J|kJ|kcal|m/s|km/h|m2|m²|ha)(?:[ /][^)]{0,12})?\)']}
+    - {id: missing, label: "Missing data codes", keywords: ["missing", "n/a", "na ", 're:(?<![A-Za-z])NA(?![A-Za-z])', "n.a.", "null", "no data", "-999", "not applicable", "not available", "not detected", "not measured", "not recorded", "blank", "empty ="]}
   describe_every_file: true
   describe_every_column: true
 

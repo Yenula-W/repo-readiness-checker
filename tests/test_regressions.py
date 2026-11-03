@@ -372,3 +372,67 @@ def test_column_with_unit_suffix_matches_readme_name(tmp_path):
     (tmp_path / "README.md").write_text("# T\n\nFile d.csv. Extract loading: extract mass / sample mass.\n")
     (tmp_path / "d.csv").write_text("Extract loading (mg/g sample)\n3.1\n")
     assert not any("not defined" in x.title for x in run(tmp_path))
+
+
+# --- round 6 (eval/precision_round6_untouched.csv) ---------------------------
+
+def test_gpl3_license_text_is_recognised():
+    from data_ready.metadata import detect_license_text
+    # zenodo 4449681: LICENSE holds the full GNU GPL v3 text.
+    assert detect_license_text("                    GNU GENERAL PUBLIC LICENSE\n                       Version 3, "
+                               "29 June 2007\n") == "GPL-3.0"
+    assert detect_license_text("GNU LESSER GENERAL PUBLIC LICENSE\n Version 3, 29 June 2007\n This version of the "
+                               "GNU Lesser General Public License incorporates the terms of version 3 of the "
+                               "GNU General Public License") == "LGPL-3.0"
+
+
+def test_survey_legend_defines_coded_columns(tmp_path):
+    # zenodo 21820838: columns 'Q1. question text'; a *_legend.csv lists code and question.
+    (tmp_path / "README.txt").write_text("Survey export. Files: results.csv, results_legend.csv.\n")
+    (tmp_path / "results_legend.csv").write_text("Code;Frage\nid;Antwort ID\nQ1;Wie alt sind Sie?\n")
+    (tmp_path / "results.csv").write_text("id. Antwort ID;Q1. Wie alt sind Sie?\n1;30\n")
+    assert not any("not defined" in x.title for x in run(tmp_path))
+
+
+def test_na_and_unit_symbols_count_as_readme_topics(tmp_path):
+    # figshare 34741380: "Options include Male, Female, and Unknown/NA" and "mass ... (g)".
+    (tmp_path / "README.txt").write_text("File d.csv. Folder structure: flat.\nColumns are defined:\n"
+                                         "- sex: Male, Female, and Unknown/NA\n- mass: body mass (g)\n")
+    (tmp_path / "d.csv").write_text("sex,mass\nMale,3\n")
+    assert not any("missing" in x.title and "topic" in x.title for x in by_check(run(tmp_path), "readme"))
+
+
+def test_file_s_is_not_a_unit():
+    from data_ready.checks import _topic_found
+    units = [k for t in load_target("zenodo")["readme"]["topics"] if t["id"] == "units" for k in t["keywords"]
+             if k.startswith("re:")][0]
+    assert not _topic_found(units, "See the file(s) listed below.", "")
+    assert _topic_found(units, "temperature (°C)", "")
+
+
+def test_prefixed_postcode_and_birth_year_are_flagged(tmp_path):
+    # zenodo 10463074: Q4_BIRTH_YEAR, Q5_POSTCODE and RESPONDENT_IP_ADDRESS passed as "no identifiers".
+    (tmp_path / "raw.csv").write_text("ID;Q4_BIRTH_YEAR;Q5_POSTCODE\n1;1950;10115\n2;1980;20095\n")
+    s = [x for x in by_check(run(tmp_path), "sensitive") if "PII" in x.title][0]
+    assert "Q5_POSTCODE" in s.detail and "Q4_BIRTH_YEAR" in s.detail
+    (tmp_path / "raw.csv").write_text("ID,RESPONDENT_IP_ADDRESS\n1,\n")
+    assert any("PII" in x.title for x in by_check(run(tmp_path), "sensitive"))
+
+
+def test_postcode_alone_in_aggregate_table_is_not_pii(tmp_path):
+    # zenodo 23122187: births registered per postcode area.
+    (tmp_path / "data.csv").write_text('"postcode","births_registered"\n"4350",1529\n"4209",1283\n')
+    s = by_check(run(tmp_path), "sensitive")
+    assert not any("PII" in x.title for x in s) and any(x.status == "pass" for x in s)
+
+
+def test_postcode_is_not_called_a_street_address(tmp_path):
+    (tmp_path / "a.csv").write_text("street,postcode\nMain St 1,60327\n")
+    s = [x for x in by_check(run(tmp_path), "sensitive") if "PII" in x.title][0]
+    assert "'postcode' looks like postcode" in s.detail
+
+
+def test_ambiguous_words_are_not_matched_after_a_prefix(tmp_path):
+    # 'grid_cell' or 'q1_lat' must not count as a phone number / coordinates by prefix stripping.
+    (tmp_path / "a.csv").write_text("q1_cell,angle_sin,site_lat\n1,0.5,3\n")
+    assert not any("PII" in x.title for x in by_check(run(tmp_path), "sensitive"))
