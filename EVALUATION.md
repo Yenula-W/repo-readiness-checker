@@ -3,12 +3,18 @@
 Evaluated 2026-11-02/03 on commit `cdb3a4b` and later. Every item of `ADOPTION_BAR.md` is listed below,
 with numbers. An item that is not fully met says so.
 
+**Headline precision: 55/60 = 91.7 %.** This is the first-run result, with no changes made, on a fresh
+held-out set of 20 datasets that were never used during development
+([§4b](#4b-fresh-untouched-held-out-sample-round-3)). Three check types were below the 80 % floor in
+that first run. Rounds 1–2 below were measured on the set used while fixing, so they are not
+independent.
+
 | # | Bar item | Status |
 |---|---|---|
 | 1 | Never crashes on messy input | **Met.** 17 robustness tests; 3 crash/hang classes found and fixed |
 | 2 | Clean install from GitHub on 3.9 / 3.12 / 3.13, README quickstart verbatim | **Met** (macOS, fresh venvs) |
-| 3 | Held-out run on 20+ real inputs, zero crashes | **Met.** 26 datasets from 4 platforms, 0 crashes |
-| 4 | Hand-checked precision ≥ 90 % overall, no check type < 80 % | **Met after fixes.** Round 1: 83 %. Round 2: 64/64 correct. Encoding has only 2 findings in the whole set (bar asks for 3) |
+| 3 | Held-out run on 20+ real inputs, zero crashes | **Met.** 46 datasets in two independent sets (Zenodo, Dryad-curated, Figshare, Dataverse, OSF), 0 crashes |
+| 4 | Hand-checked precision ≥ 90 % overall, no check type < 80 % | **Partly met on the untouched sample: 91.7 % overall, but encoding (2/3), README (5/7) and PII (5/7) were below 80 %.** All 5 errors were then fixed with regression tests (60/60 on re-judging, not an independent estimate). See [§4b](#4b-fresh-untouched-held-out-sample-round-3) |
 | 5 | Never invents or overstates | **Met after fixes.** 9 overstated or invented outputs found and fixed (listed below) |
 | 6 | CI green on GitHub, repo private | **Met.** Run 41552597005: 4/4 jobs green; repo `PRIVATE` |
 | 7 | This file | Done |
@@ -138,8 +144,7 @@ published rule. The full sheets, with a note on every judgment, are
 | size | 7/7 | 0 | 7/7 |
 | **Total** | **53/64 (83 %)** | **11** | **64/64 (100 %)** |
 
-¹ The held-out set produced only two encoding findings, so the bar's minimum of 3 per type cannot be
-met for this check. Both are verified (bytes `0xEA` and `0x96`, Windows-1252).
+¹ The round 1–2 set produced only two encoding findings. Round 3 adds three more (§4b). Both are verified (bytes `0xEA` and `0x96`, Windows-1252).
 
 Round 1 had no outright wrong results, but 11 were debatable because they overstated:
 
@@ -171,6 +176,89 @@ PII true positive kept: DVN/DHDNIC publishes full dates of birth alongside uniqu
 mortality file. Under HIPAA Safe Harbor that is an identifier, and the tool flags it (FAIL for Dryad
 and NIH, WARN elsewhere).
 
+## 4b. Fresh untouched held-out sample (round 3)
+
+The datasets used in rounds 1–2 were also used for fixing, so those numbers are not an independent
+estimate. Round 3 used **20 new datasets** ([`eval/heldout2.json`](eval/heldout2.json)), none seen
+before. The selection included non-UTF-8 text: GBK, Mac Roman and UTF-16. Five OSF datasets were
+also listed, but OSF's API returned HTTP 502/503 for over 12 minutes on 2026-11-03, so they could
+not be fetched and are not included.
+
+The code was frozen at commit `f2d4e97`. It was run with and without the Zenodo records as
+metadata, and a new seeded sample was drawn (`--per-check 7 --seed=20261104`, 60 findings).
+Every finding was judged before anything was changed, and the verdicts were committed in
+`6bb924e` ([`eval/precision_round3_untouched.csv`](eval/precision_round3_untouched.csv)).
+
+**Crashes:** 0 in 40 runs (20 datasets, each with and without metadata). The datasets total 72 files
+and 59 MB; the median runtime was 0.38 s and the maximum 8.15 s. The 26 earlier datasets were
+re-run on the final code, also with 0 crashes.
+
+| Dataset | Source | What it exercises | Files | MB | Seconds | Report bytes |
+|---|---|---|---|---|---|---|
+| [34797510](https://figshare.com/articles/dataset/34797510) | Figshare | RDS + README.txt + CSV | 4 | 0.3 | 0.36 | 60,747 |
+| [34804749](https://figshare.com/articles/dataset/34804749) | Figshare | data_dictionary.csv + provenance.json | 7 | 0.0 | 0.33 | 56,416 |
+| [34827726](https://figshare.com/articles/dataset/34827726) | Figshare | Single SPSS .sav | 1 | 0.0 | 0.28 | 51,727 |
+| [34843410](https://figshare.com/articles/dataset/34843410) | Figshare | Well documented: README, DATA_DICTIONARY, LICENSE | 6 | 0.0 | 0.30 | 55,321 |
+| [34874547](https://figshare.com/articles/dataset/34874547) | Figshare | Survey raw/processed CSV, Chinese docx, RAR | 5 | 0.4 | 0.48 | 77,660 |
+| [10352789](https://zenodo.org/records/10352789) | Zenodo | French humanities survey CSV + JSON | 2 | 0.2 | 0.37 | 58,626 |
+| [10803768](https://zenodo.org/records/10803768) | Zenodo | Dutch survey; README named LEESMIJ.md | 2 | 3.5 | 2.12 | 56,357 |
+| [1098538](https://zenodo.org/records/1098538) | Zenodo | Spanish Google Forms export | 1 | 0.1 | 0.32 | 56,678 |
+| [12180686](https://zenodo.org/records/12180686) | Zenodo | Precipitation series: .mat files + stations CSV | 5 | 17.1 | 0.36 | 60,898 |
+| [12200702](https://zenodo.org/records/12200702) | Zenodo | German survey, 17 files incl. SPSS syntax | 17 | 6.0 | 8.15 | 110,084 |
+| [13307952](https://zenodo.org/records/13307952) | Zenodo | German history database: CSV + MS Access .mdb | 4 | 22.0 | 1.39 | 63,335 |
+| [14802255](https://zenodo.org/records/14802255) | Zenodo | Tick/bird TXT tables with spaces in names | 2 | 0.0 | 0.33 | 52,171 |
+| [15148905](https://zenodo.org/records/15148905) | Zenodo | French survey 'données.csv' | 2 | 2.7 | 0.39 | 58,641 |
+| [4938181](https://zenodo.org/records/4938181) | Dryad (via Zenodo) | .xls + README txt | 2 | 0.0 | 0.29 | 59,093 |
+| [4945122](https://zenodo.org/records/4945122) | Dryad (via Zenodo) | single TXT with & in name | 1 | 0.0 | 0.54 | 61,023 |
+| [4997172](https://zenodo.org/records/4997172) | Dryad (via Zenodo) | mindfulness trial, docx README + xlsx | 2 | 0.0 | 0.71 | 59,558 |
+| [5024407](https://zenodo.org/records/5024407) | Dryad (via Zenodo) | README_for_*.txt, spaces in names | 3 | 0.0 | 0.53 | 59,840 |
+| [7090079](https://zenodo.org/records/7090079) | Dryad (via Zenodo) | README.txt + CSV | 2 | 0.0 | 0.38 | 58,722 |
+| [7420965](https://zenodo.org/records/7420965) | Dryad (via Zenodo) | long README name + CSV | 2 | 0.0 | 0.35 | 59,150 |
+| [8437097](https://zenodo.org/records/8437097) | Dryad (via Zenodo) | 6.5 MB CSV + README.md | 2 | 6.5 | 0.55 | 59,249 |
+
+### Untouched first-run precision (headline)
+
+| Check | Correct | Wrong | Debatable | Precision |
+|---|---|---|---|---|
+| archives | 1 | 0 | 0 | 1/1 = 100 % ¹ |
+| checksums | 7 | 0 | 0 | 100 % |
+| encoding | 2 | 1 | 0 | **67 %** |
+| formats | 7 | 0 | 0 | 100 % |
+| license | 7 | 0 | 0 | 100 % |
+| metadata | 7 | 0 | 0 | 100 % |
+| naming | 7 | 0 | 0 | 100 % |
+| readme | 5 | 2 | 0 | **71 %** |
+| sensitive (PII) | 5 | 1 | 1 | **71 %** |
+| size | 7 | 0 | 0 | 100 % |
+| **Total** | **55** | **4** | **1** | **91.7 %** |
+
+¹ Only one dataset in this set contained an archive, so only one archives finding existed.
+
+The bar is not met on this independent sample: the total is above 90 %, but three check types are
+below 80 %. The errors were:
+
+| # | Wrong output | Dataset | Root cause → fix |
+|---|---|---|---|
+| 11 | Detail said three UTF-16 files were "read as Windows-1252/Latin-1" | zenodo 12200702 | The message was fixed text. It now states per file "UTF-16 encoded" or "encoding unknown; read as Windows-1252" |
+| 42 | 7 columns "not defined", but the README defines them as `Veg\_type` (Markdown-escaped) | zenodo 8437097 | Markdown escapes are removed before matching. The 2 columns still reported (`N`, `N.SD`) really are undocumented |
+| 45 | Data file "not mentioned", but the README names `me\_biomass\_for\_repository.csv` | zenodo 8437097 | Same fix |
+| 50 | PII: the author's contact email in a `#Contact …` comment line was read as data | zenodo 4945122 | Leading `#` comment lines are skipped. The file used classic-Mac CR line endings, which are now normalised |
+| 51 | (debatable) `IP` column flagged without saying its values are masked (`10.20.*.*`) | figshare 34874547 | The message now says the values appear partly masked and asks the author to check the masking is enough |
+
+One more error was noticed outside the sample and also fixed: the Dutch README `LEESMIJ.md` was
+reported as "No README found" (zenodo 10803768). README names in Dutch, German, French, Spanish,
+Portuguese and Swedish are now recognised.
+
+Each fix has a regression test, marked "round 3" in `tests/test_regressions.py`. After the fixes,
+the same 60 findings were re-judged and all 60 are correct
+([`eval/precision_round3_after_fix.csv`](eval/precision_round3_after_fix.csv)). This is **not** an
+independent estimate. A further untouched sample would be needed to confirm the fixed readme, PII
+and encoding checks reach 80 % or more.
+
+True positive worth noting: zenodo 10803768's `data_anon.csv` ("anonymised") still contains
+respondents' personal email addresses in free-text answers. The tool flags it (FAIL for Dryad and
+NIH, WARN elsewhere).
+
 ## 5. Never invents or overstates
 
 - **Drafts:** across all 26 datasets, the only non-TODO values in `.zenodo.draft.json` are:
@@ -199,6 +287,8 @@ reports `PRIVATE`).
 
 ## Known limitations
 
+- **Encoding detection:** non-UTF-8 files are reported, but the real encoding (GBK, Mac Roman, Windows-1252…) is not identified, only UTF-16. Column names in a GBK file are therefore read garbled, and the PII header patterns may miss them.
+- **OSF was not in the round-3 set** because its API was unavailable during the run.
 - **PII detection:** reads only CSV/TSV/TXT and `.xlsx`, and only column names plus the first
   2,000 rows (4 MB). Header patterns are English-only; the Chinese headers in osf pu9rd (被试,
   年龄…) are not matched. Quasi-identifiers (age + sex + ethnicity) are not assessed. It does not

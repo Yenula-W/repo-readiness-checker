@@ -193,3 +193,65 @@ def test_no_readme_mentions_unchecked_archive(tmp_path):
         z.writestr("README.txt", "hi")
     r = [x for x in run(tmp_path, "dryad") if x.check == "readme"][0]
     assert r.status == "fail" and "all.zip" in r.detail
+
+
+# --- Fresh held-out set (round 3, eval/precision_round3_untouched.csv) ---------------
+
+def test_markdown_escaped_names_are_matched(tmp_path):
+    # zenodo 8437097: README.md writes me\_biomass\_for\_repository.csv and Veg\_type.
+    (tmp_path / "README.md").write_text(
+        "# T\n\nThe data are in me\\_biomass\\_for\\_repository.csv.\n\n1. Veg\\_type is the community; KgDM\\_Ha in kg.\n")
+    (tmp_path / "me_biomass_for_repository.csv").write_text("Veg_type,KgDM_Ha\na,1\n")
+    f = run(tmp_path)
+    assert not any("not mentioned" in x.title or "column(s) not defined" in x.title for x in f)
+
+
+def test_comment_header_lines_are_skipped(tmp_path):
+    # zenodo 4945122: '#Contact <author email>' was read as data and flagged as PII.
+    (tmp_path / "moths.txt").write_text(
+        "#Raw data from Altermatt & Ebert. Biology Letters 2016.\t\t\n#Contact someone@eawag.ch for questions\t\t\n"
+        "location\tsex\tmoths attracted\nBlochmont\tm\t9\nBlochmont\tf\t7\n")
+    from data_ready.scan import scan as sc
+    fi = sc(tmp_path)[0]
+    assert fi.columns == ["location", "sex", "moths attracted"]
+    assert [x.status for x in run(tmp_path) if x.check == "sensitive"] == ["pass"]
+
+
+def test_utf16_detail_is_accurate(tmp_path):
+    # zenodo 12200702: UTF-16 files were described as "read as Windows-1252/Latin-1".
+    (tmp_path / "v.csv").write_bytes('"a","b"\n"1","2"\n'.encode("utf-16"))
+    (tmp_path / "w.csv").write_bytes("a\nKleinl\x9ftzel\n".encode("latin-1"))
+    enc = [x for x in run(tmp_path) if x.check == "encoding"][0]
+    assert "v.csv: UTF-16 encoded" in enc.detail and "w.csv: encoding unknown" in enc.detail
+    assert "Latin-1" not in enc.detail
+
+
+def test_masked_ip_values_are_described(tmp_path):
+    # figshare 34874547: 'IP' column holds 10.20.*.* style masked addresses.
+    (tmp_path / "raw.csv").write_text("id,IP\n1,10.20.*.*\n2,10.30.*.*\n")
+    s = [x for x in run(tmp_path) if x.check == "sensitive" and "PII" in x.title][0]
+    assert "partly masked" in s.detail and "10.20.*.*" in s.detail
+
+
+def test_email_in_free_text_answer_is_flagged(tmp_path):
+    # zenodo 10803768: a respondent left a personal email in a free-text survey answer (true positive).
+    (tmp_path / "data_anon.csv").write_text("id,QPERS_COMPLAIN\n1,Contact me: someone@example.org\n2,nee\n")
+    assert any(x.status == "fail" for x in run(tmp_path, "dryad") if x.check == "sensitive")
+
+
+def test_comment_lines_with_classic_mac_line_endings(tmp_path):
+    # zenodo 4945122 really uses bare CR line endings.
+    (tmp_path / "m.txt").write_bytes(b"#Title line\t\r#Contact a@b.ch\t\rsite\tsex\rX\tm\rY\tf\r")
+    from data_ready.scan import scan as sc
+    assert sc(tmp_path)[0].columns == ["site", "sex"]
+
+
+def test_non_english_readme_names(tmp_path):
+    # zenodo 10803768: Dutch README named LEESMIJ.md was reported as "No README found".
+    from data_ready.checks import README_RE
+    for n in ("LEESMIJ.md", "LIESMICH.txt", "lisezmoi.md", "LÉAME.txt", "leia-me.md", "README.md"):
+        assert README_RE.search(n), n
+    assert not README_RE.search("thread_metrics.txt")
+    (tmp_path / "LEESMIJ.md").write_text("# Canonenquête\n\ndata_anon.csv bevat de antwoorden.\n")
+    (tmp_path / "data_anon.csv").write_text("id\n1\n")
+    assert [x for x in run(tmp_path) if x.check == "readme"][0].title == "README found: LEESMIJ.md"

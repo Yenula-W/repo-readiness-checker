@@ -54,7 +54,8 @@ def _decode_head(raw: bytes, truncated: bool):
     try:
         return dec.decode(raw, final=not truncated), None
     except UnicodeDecodeError:
-        return raw.decode("cp1252", errors="replace"), "not valid UTF-8 (read as Windows-1252/Latin-1)"
+        # The real encoding (Windows-1252, Mac Roman, GBK...) cannot be known for sure.
+        return raw.decode("cp1252", errors="replace"), "not valid UTF-8 (encoding unknown; read as Windows-1252)"
 
 
 def _read_delimited(fi: FileInfo) -> None:
@@ -66,6 +67,15 @@ def _read_delimited(fi: FileInfo) -> None:
         fi.read_error = err
     if truncated and "\n" in text:
         text = text[: text.rfind("\n") + 1]  # drop the partial last line
+    # Classic Mac files end lines with a bare CR; make every line end with LF.
+    text = text.replace("\r\n", "\n").replace("\r", "\n")
+    # Skip leading '#' comment lines (title, contact) so the real header row is used.
+    lines = text.split("\n")
+    skip = 0
+    while skip < len(lines) and skip < 50 and lines[skip].lstrip().startswith("#"):
+        skip += 1
+    if skip and skip < len(lines):
+        text = "\n".join(lines[skip:])
     if "\x00" in text[:65536]:
         fi.read_error = "contains NUL bytes; looks like a binary file, not text"
         return

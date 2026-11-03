@@ -47,7 +47,10 @@ class Context:
     doc_files: List[str] = field(default_factory=list)
 
 
-README_RE = re.compile(r"(?<![a-z])read[ _.-]?me(?![a-z]).*\.(md|markdown|txt|rst|rtf|pdf|html|docx?)$|^read[ _-]?me$", re.I)
+# "read me" in English, Dutch, German, French, Spanish, Portuguese, Swedish.
+README_WORD = r"(read[ _.-]?me|lees[ _.-]?mij|lies[ _.-]?mich|lisez[ _.-]?moi|l[eé]a[ _.-]?me|leia[ _.-]?me|l[aä]s[ _.-]?mig)"
+README_RE = re.compile(r"(?<![a-z])" + README_WORD + r"(?![a-z]).*\.(md|markdown|txt|rst|rtf|pdf|html|docx?)$|^"
+                       + README_WORD + r"$", re.I)
 # Files that often do a README's job under another name (FileDescription.docx, codebook.pdf...).
 README_LIKE_RE = re.compile(r"(file[ _-]?descriptions?|description[ _-]?of[ _-]?files|documentation|codebook|about)", re.I)
 DICT_RE = re.compile(r"(dictionary|codebook|data[_-]?dict|variables|schema|field[_-]?descriptions|metadata)", re.I)
@@ -112,7 +115,13 @@ def prepare(ctx: Context) -> None:
     doc = ctx.readme or ctx.readme_like
     if doc and doc.ext not in BINARY_DOC_EXT:
         ctx.readme_text = _read_text(doc.path)
-    ctx.docs_text = "\n".join(corpus).lower()
+    ctx.readme_text = _unescape_markdown(ctx.readme_text)
+    ctx.docs_text = _unescape_markdown("\n".join(corpus)).lower()
+
+
+def _unescape_markdown(text: str) -> str:
+    """'me\\_biomass\\_data.csv' -> 'me_biomass_data.csv' so escaped names still match."""
+    return re.sub(r"\\([\\`*_{}\[\]()#+\-.!|])", r"\1", text)
 
 
 def _find_readme_like(ctx: Context, top: List[FileInfo]) -> Optional[FileInfo]:
@@ -490,7 +499,10 @@ def check_sensitive(ctx: Context) -> List[Finding]:
                 continue
             for kind, pat in PII_HEADERS.items():
                 if re.search(pat, h):
-                    hits[f.rel].append(f"column '{col}' looks like {kind}")
+                    filled = [v for v in values if v]
+                    masked = filled and all(re.search(r"[*]|x{2,}|#{2,}", v, re.I) for v in filled)
+                    note = f" (values appear partly masked, e.g. {filled[0]!r}; check the masking is enough)" if masked else ""
+                    hits[f.rel].append(f"column '{col}' looks like {kind}{note}")
                     break
             for kind, (rx, min_hits) in PII_VALUES.items():
                 n = sum(1 for v in values if v and rx.search(v))
@@ -680,8 +692,10 @@ def unreadable(ctx: Context) -> List[Finding]:
                            "Repositories store real files, not links, so linked content would be missing from the deposit.",
                            "Replace each link with the file it points to, or remove it.", files=[f.rel for f in links]))
     if enc:
+        how = "; ".join(f"{f.rel}: {f.read_error[len('not valid UTF-8 ('):-1]}" for f in enc[:6])
         out.append(Finding("encoding", WARN, f"{len(enc)} text file(s) are not UTF-8",
-                           "They were read as Windows-1252/Latin-1; accented characters may display wrongly for others.",
+                           f"Non-ASCII characters may display wrongly for others. {how}"
+                           + (" …" if len(enc) > 6 else "") + ".",
                            "Re-save these files as UTF-8.", "https://www.loc.gov/preservation/digital/formats/fdd/fdd000285.shtml",
                            [f.rel for f in enc]))
     if other:
