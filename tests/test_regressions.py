@@ -2,6 +2,8 @@
 Each test names the public dataset where the problem was seen (see EVALUATION.md)."""
 from pathlib import Path
 
+import pytest
+
 from data_ready.checks import Context, run_all
 from data_ready.rules_loader import load_target
 from data_ready.scan import scan
