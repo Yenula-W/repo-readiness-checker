@@ -30,10 +30,10 @@ draft `report/.zenodo.draft.json`. Point it at your own folder instead of `demo`
 
 | Area | What it looks for |
 |---|---|
-| Metadata | Required and recommended fields for the target (title, creators, affiliations, emails, keywords, license, research domain, funding…), read from `.zenodo.json`, `datacite.json`, `CITATION.cff` or `metadata.yaml`. A value found only in the README is a WARN: you still have to enter it on the deposit form. |
+| Metadata | Required and recommended fields for the target (title, creators, affiliations, emails, keywords, license, research domain, funding…), read from `.zenodo.json`, `datacite.json`, `CITATION.cff`, `metadata.yaml` or a Frictionless `datapackage.json`. A value found only in the README is a WARN: you still have to enter it on the deposit form. |
 | README / data dictionary | A README exists and is in the right format (Dryad needs `.md`). It covers the expected topics (files, variables, units, missing-value codes…). **Every file** and **every CSV/TSV/Excel column** is mentioned in the README or a data dictionary/codebook. |
 | Formats | Proprietary formats (`.xlsx`, `.mat`, `.sav`, `.dta`, `.pkl`, `.docx`…) get a suggestion for an open alternative. An open-format twin with the same name (for example `results.csv` next to `results.xlsx`) clears the warning. Formats the repository rejects (Dryad: `.rar`) are a FAIL. |
-| License | A license in the metadata or a recognised `LICENSE` file. Dryad accepts CC0 only. |
+| License | A license in the metadata, a recognised `LICENSE` file, or a License/Licence section of the README. Dryad accepts CC0 only. |
 | File naming | Spaces, special or non-ASCII characters, very long names, names that differ only in case, and junk files (`.DS_Store`, `~$` lock files, `__MACOSX`). |
 | Sensitive data | Column names and sample values that look like direct identifiers: names, emails, date of birth, MRN, SSN, phone, address, IP. This is a FAIL for Dryad and NIH DMS and a WARN elsewhere. A bare `Name` column is flagged only if its values look like people's names (so species or site names are not). Files it cannot read (`.xls`, `.sav`, `.dta`, `.mat`…) are listed for a manual check. It is a heuristic only and does **not** replace a disclosure review. |
 | Checksums | Checks any `manifest-sha256.txt`, `md5sum.txt` or `SHA256SUMS` file against the data. `--write-manifest` creates one in BagIt format. A missing manifest is only INFO: the repositories compute their own checksums. |
@@ -47,7 +47,7 @@ draft `report/.zenodo.draft.json`. Point it at your own folder instead of `demo`
 - With `--out DIR`: two reports.
   - `readiness-report.md`: a plain-English **fix-it list** (FAIL first, then WARN, each with a source link) and a table of every check.
   - `readiness-report.json`: the same findings plus a per-file SHA-256 and column inventory, for scripts and dashboards.
-- `--draft-metadata zenodo|datacite` writes `.zenodo.draft.json` / `datacite.draft.json` from what is known. **It never invents values.** Each value comes from your metadata file, the README's first heading and paragraph, or the LICENSE text. Anything unknown becomes `"TODO: …"`.
+- `--draft-metadata zenodo|datacite` writes `.zenodo.draft.json` / `datacite.draft.json` from what is known. **It never invents values.** Each value comes from your metadata file, the README's first heading, first paragraph and License section, or the LICENSE text. Anything unknown becomes `"TODO: …"`.
 - `--strict` exits with code 1 if any target FAILs. Use it in CI.
 
 ## Targets are data, not code
@@ -99,11 +99,11 @@ See [docs/real-world-test.md](docs/real-world-test.md) for a run on five public 
 
 ## Limitations
 
-See [EVALUATION.md](EVALUATION.md) for the held-out test on 26 public datasets and the hand-checked precision.
+See [EVALUATION.md](EVALUATION.md) for the held-out tests on 108 public datasets and the hand-checked precision (95.9 % on the latest untouched sample).
 
 - The README checks look for keywords and names. They can tell whether a column is *mentioned*, not whether it is explained well.
 - PII detection reads only CSV/TSV/TXT and `.xlsx` files. It checks column names and the first 2,000 rows (4 MB). The header patterns are in English only, and it does not read free text, images, `.xls`, SPSS, Stata or other formats.
 - Excel parsing assumes the header is in row 1 of each sheet. Large workbooks are slow to open (about 3 s each).
 - Files inside archives are not checked; unpack them first.
-- Supported metadata formats: Zenodo (`.zenodo.json` or a record from `zenodo.org/api/records/<id>`), DataCite JSON, `CITATION.cff` and `metadata.yaml`. Figshare, Dataverse and OSF exports are not read. The tool tells you so instead of guessing.
+- Supported metadata formats: Zenodo (`.zenodo.json` or a record from `zenodo.org/api/records/<id>`), DataCite JSON, `CITATION.cff`, `metadata.yaml` and Frictionless `datapackage.json`. Figshare, Dataverse and OSF exports are not read. The tool tells you so instead of guessing.
 - Repository rules change. Every target records the date it was verified; check its sources again before relying on it.

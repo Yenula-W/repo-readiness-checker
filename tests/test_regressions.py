@@ -314,3 +314,59 @@ def test_nih_related_identifiers_label_does_not_claim_publications(tmp_path):
     (tmp_path / "a.csv").write_text("x\n1\n")
     f = run(tmp_path, "nih-dms", {"related_identifiers": ["10.5281/zenodo.3950528"]})
     assert not any("Related publications" in x.title for x in f)
+
+
+# --- round 5 (eval/precision_round5_untouched.csv) ---------------------------
+
+def test_mostly_utf8_file_with_corrupt_bytes(tmp_path):
+    # zenodo 8238711: UTF-8 umlauts plus a few broken bytes was described as Windows-1252.
+    (tmp_path / "d.csv").write_bytes(("a;b\n" + "unterstützt;Größe\n" * 30).encode() + b"x\xef;y\n")
+    f = scan(tmp_path)[0]
+    assert "mostly UTF-8" in f.read_error and "1 invalid" in f.read_error
+    assert f.sample[0]["a"] == "unterstützt"
+
+
+def test_quoted_paper_title_and_labels_are_not_a_description():
+    # zenodo 23779100: README.txt starts with the quoted title of the paper, then "Contact:" lines.
+    from data_ready.metadata import infer_from_readme
+    text = ('README — Data and code supporting:\n\n"Can a brief food-frequency questionnaire identify\n'
+            'high-footprint diets? Comparison with recalls"\n\nCorresponding author: A. Person, Some University (a@b.org)\n\n'
+            '1. participant_data.csv\n   Participant-level estimates for the method-comparison sample.\n')
+    assert "description" not in infer_from_readme(text)
+    assert infer_from_readme("Abstract: This dataset holds daily soil moisture from 12 plots in Kenya.\n")[
+        "description"].startswith("This dataset")
+
+
+def test_excel_caption_row_is_not_the_header(tmp_path):
+    # zenodo 23493423: row 1 of each sheet is a one-cell caption; the header is below it.
+    import openpyxl
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.append(["Data underlying Figs. 4-6 of the article"])
+    ws.append([])
+    ws.append(["run", "temperature_C"])
+    ws.append([1, 850])
+    notes = wb.create_sheet("Contents")
+    notes.append(["Dataset accompanying the article, see README"])
+    notes.append(["Sheet 1 holds the measurements."])
+    wb.save(tmp_path / "x.xlsx")
+    f = scan(tmp_path)[0]
+    assert f.columns == ["run", "temperature_C"] and f.sample[0]["temperature_C"] == "850"
+
+
+def test_csv_title_row_is_not_the_header(tmp_path):
+    # figshare 26798023: first line 'DatosGeneralesTotales;;;;' above the real header.
+    (tmp_path / "d.csv").write_text("DatosGeneralesTotales;;;\nID;Provincia;Sexo;Edad\n1;Madrid;M;30\n")
+    assert scan(tmp_path)[0].columns == ["ID", "Provincia", "Sexo", "Edad"]
+
+
+def test_single_column_csv_keeps_its_header(tmp_path):
+    (tmp_path / "d.csv").write_text("value\n1\n2\n")
+    assert scan(tmp_path)[0].columns == ["value"]
+
+
+def test_column_with_unit_suffix_matches_readme_name(tmp_path):
+    # zenodo 23493423: README defines "Extract loading"; the column is "Extract loading (mg/g sample)".
+    (tmp_path / "README.md").write_text("# T\n\nFile d.csv. Extract loading: extract mass / sample mass.\n")
+    (tmp_path / "d.csv").write_text("Extract loading (mg/g sample)\n3.1\n")
+    assert not any("not defined" in x.title for x in run(tmp_path))

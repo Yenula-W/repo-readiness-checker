@@ -5,6 +5,7 @@ import codecs
 import csv
 import hashlib
 import io
+import itertools
 import os
 import zipfile
 from dataclasses import dataclass, field
@@ -54,8 +55,32 @@ def _decode_head(raw: bytes, truncated: bool):
     try:
         return dec.decode(raw, final=not truncated), None
     except UnicodeDecodeError:
-        # The real encoding (Windows-1252, Mac Roman, GBK...) cannot be known for sure.
-        return raw.decode("cp1252", errors="replace"), "not valid UTF-8 (encoding unknown; read as Windows-1252)"
+        pass
+    # A UTF-8 file with a few corrupt bytes is still best read as UTF-8.
+    body = raw[:-3] if truncated else raw
+    esc = body.decode("utf-8", errors="surrogateescape")
+    bad = sum(1 for ch in esc if "\udc80" <= ch <= "\udcff")
+    good = sum(1 for ch in esc if ord(ch) > 0x7F) - bad
+    if good > bad:
+        return (raw.decode("utf-8-sig", errors="replace"),
+                f"not valid UTF-8 (mostly UTF-8, but {bad} invalid byte(s); read as UTF-8)")
+    # The real encoding (Windows-1252, Mac Roman, GBK...) cannot be known for sure.
+    return raw.decode("cp1252", errors="replace"), "not valid UTF-8 (encoding unknown; read as Windows-1252)"
+
+
+def _header_row(rows: List[List[str]]) -> Optional[int]:
+    """Index of the header row among the first rows of a table, or None if the sheet holds
+    only captions. A one-cell first row ('Data underlying Fig. 4', 'DatosGeneralesTotales')
+    is a title when a later row has 2+ cells."""
+    def filled(r):
+        return sum(1 for c in r if str(c).strip())
+    if not rows or filled(rows[0]) != 1:
+        return 0
+    for i, r in enumerate(rows[1:11], 1):
+        if filled(r) >= 2:
+            return i
+    first = next(str(c).strip() for c in rows[0] if str(c).strip())
+    return None if len(first) > 30 else 0
 
 
 def _read_delimited(fi: FileInfo) -> None:
@@ -87,6 +112,12 @@ def _read_delimited(fi: FileInfo) -> None:
         dialect = csv.Sniffer().sniff(text[:8192], delimiters=",\t;|")
     except csv.Error:
         dialect = csv.excel_tab if fi.ext in (".tsv", ".tab") else csv.excel
+    head = list(csv.reader(io.StringIO("\n".join(text.split("\n")[:12]), newline=""), dialect=dialect))
+    start = _header_row(head)
+    if start is None:
+        return
+    if start:
+        text = "\n".join(text.split("\n")[start:])
     reader = csv.DictReader(io.StringIO(text, newline=""), dialect=dialect)
     fi.columns = [c.strip() for c in (reader.fieldnames or []) if c is not None]
     for i, row in enumerate(reader):
@@ -105,9 +136,12 @@ def _read_excel(fi: FileInfo) -> None:
     fi.sheets = list(wb.sheetnames)
     for ws in wb.worksheets:
         rows = ws.iter_rows(values_only=True)
-        header = next(rows, None)
-        if not header:
+        top = list(itertools.islice(rows, 12))
+        start = _header_row([["" if c is None else c for c in r] for r in top])
+        if start is None or not top:
             continue
+        header = top[start]
+        rows = itertools.chain(top[start + 1:], rows)
         cols = [str(c).strip() for c in header if c is not None]
         fi.columns.extend(c for c in cols if c not in fi.columns)
         for i, r in enumerate(rows):

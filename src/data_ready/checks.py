@@ -275,6 +275,15 @@ def _mentioned(needle: str, haystack: str) -> bool:
     return re.search(r"(?<![a-z0-9])" + re.escape(n) + r"(?![a-z0-9])", haystack) is not None
 
 
+def _column_described(col: str, docs: str) -> bool:
+    """A column counts as described if its name appears, with or without a unit suffix:
+    'Extract loading (mg/g sample)' is described by a README line on 'Extract loading'."""
+    if _mentioned(col, docs):
+        return True
+    bare = re.sub(r"\s*[\(\[][^\)\]]*[\)\]]\s*$", "", col).strip()
+    return bool(bare) and bare != col and len(bare) > 3 and _mentioned(bare, docs)
+
+
 def _file_described(rel: str, docs: str) -> bool:
     p = Path(rel)
     if _mentioned(p.name, docs) or _mentioned(rel, docs) or _mentioned(p.stem, docs) and len(p.stem) > 3:
@@ -351,7 +360,7 @@ def check_readme(ctx: Context) -> List[Finding]:
         gaps = {}
         for f in ctx.files:
             if f.columns and f.rel not in ctx.doc_files:
-                miss = [c for c in f.columns if c and not _mentioned(c, docs)]
+                miss = [c for c in f.columns if c and not _column_described(c, docs)]
                 if miss:
                     gaps[f.rel] = miss
         if gaps:

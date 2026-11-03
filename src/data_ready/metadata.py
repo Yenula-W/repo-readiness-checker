@@ -261,7 +261,15 @@ def infer_from_readme(text: str) -> Dict[str, str]:
         out["title"] = title.strip("*_ ").strip()
     for block in re.split(r"\n\s*\n", text):
         b = block.strip()
-        if b and not b.startswith(("#", "-", "*", "|", "```", "<", "!")) and len(b) > 40:
+        # Not a description: a quoted paper title, a "supporting:" lead-in, a "Contact: ..."
+        # label line or a numbered list item.
+        quoted = b[:1] in "\"“'" and b.rstrip(".")[-1:] in "\"”'"
+        intro = re.match(r"(description|abstract|summary|overview|about)\s*:\s*", b, re.I)
+        if intro:
+            b = b[intro.end():]
+        label = not intro and re.match(r"(\d+[.)]\s|[A-Z][\w ]{0,30}:\s)", b)
+        if b and not b.startswith(("#", "-", "*", "|", "```", "<", "!")) and len(b) > 40 and not quoted \
+                and not b.endswith(":") and not label:
             out["description"] = " ".join(b.split())
             break
     return out

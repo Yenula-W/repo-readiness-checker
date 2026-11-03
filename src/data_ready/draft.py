@@ -1,6 +1,6 @@
 """Emit draft metadata files from what is known. Unknown values become TODO markers.
 
-Never invent: every value comes from the user's metadata file, the README's H1 /
+Never invent: every value comes from the user's metadata file, the README's H1 / License section /
 first paragraph, or the LICENSE text. Everything else is a "TODO: ..." string.
 """
 from __future__ import annotations
