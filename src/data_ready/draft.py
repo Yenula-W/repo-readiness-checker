@@ -43,7 +43,7 @@ def zenodo_json(md: Dict[str, Any], inf: Dict[str, Any]) -> Dict[str, Any]:
         "keywords": kw,
         "license": lic.lower() if not str(lic).startswith(TODO) else lic,
         "publication_date": md.get("publication_date") or f"{TODO}: YYYY-MM-DD",
-        "access_right": "open",
+        "access_right": f"{TODO}: open | embargoed | restricted | closed",
     }
     if md.get("version"):
         out["version"] = md["version"]

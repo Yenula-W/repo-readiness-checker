@@ -16,7 +16,14 @@ required_metadata:
   - {field: title, label: "Title", why: "Metadata must support discovery, reuse and citation.", source: "https://grants.nih.gov/policy-and-compliance/policy-topics/sharing-policies/dms/selecting-a-data-repository"}
   - {field: creators, label: "Creators", min_count: 1, why: "Needed for attribution and citation.", source: "https://grants.nih.gov/policy-and-compliance/policy-topics/sharing-policies/dms/selecting-a-data-repository"}
   - {field: description, label: "Description", why: "Element 1: describe data type, modality, aggregation and processing level.", source: "https://grants.nih.gov/grants/guide/notice-files/NOT-OD-21-014.html"}
-  - {field: funding, label: "NIH award number", why: "Shared data must be linkable to the award whose DMS Plan covers it.", source: "https://grants.nih.gov/grants/guide/notice-files/NOT-OD-21-013.html"}
+  - field: funding
+    label: "NIH award number"
+    why: "Shared data must be linkable to the award whose DMS Plan covers it."
+    # NIH award numbers look like 1R01GM123456-01 / R01 GM123456; or the funder is named as NIH.
+    pattern: '\b\d?[A-Z]\d{2}\s?[A-Z]{2}\s?\d{6}\b|National Institutes? of Health|\bNIH\b'
+    pattern_label: "an NIH award (e.g. R01GM123456) or NIH as funder"
+    pattern_fix: "Add the NIH award number (e.g. R01GM123456). If this data is not NIH-funded, the NIH DMS profile does not apply."
+    source: "https://grants.nih.gov/grants/guide/notice-files/NOT-OD-21-013.html"
   - {field: license, label: "License / use terms", why: "Repositories should document how data may be accessed and used; reuse terms as broad as possible.", source: "https://grants.nih.gov/policy-and-compliance/policy-topics/sharing-policies/dms/selecting-a-data-repository"}
 
 recommended_metadata:

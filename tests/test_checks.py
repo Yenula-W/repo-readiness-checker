@@ -104,7 +104,7 @@ def test_messy_dataset_problems_found(tmp_path):
     assert ("readme", "fail") in by
     assert ("formats", "fail") in by          # .rar rejected by Dryad
     assert ("sensitive", "fail") in by        # PII is a hard stop for Dryad
-    assert ("checksums", "warn") in by
+    assert ("checksums", "info") in by
     t = titles(f, "warn")
     assert ".mat" in t and "spaces" in t and "system/temporary" in t and "empty" in t
     pii = next(x for x in f if x.check == "sensitive" and "PII" in x.title)

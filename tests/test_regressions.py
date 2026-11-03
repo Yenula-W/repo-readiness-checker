@@ -99,7 +99,7 @@ def test_uninspectable_data_files_are_disclosed(tmp_path):
         (tmp_path / n).write_bytes(b"\x00" * 10)
     s = by_check(run(tmp_path), "sensitive")
     assert s[0].status == "info" and len(s[0].files) == 3
-    assert "0 tabular file(s)" in s[1].title
+    assert len(s) == 1
 
 
 def test_utf8_character_split_at_buffer_edge_is_not_an_encoding_error(tmp_path):
@@ -113,3 +113,83 @@ def test_cp1252_csv_is_reported_as_not_utf8(tmp_path):
     (tmp_path / "a.csv").write_bytes("q\nSenki nem veszít\n".encode("cp1252"))
     enc = by_check(run(tmp_path), "encoding")
     assert enc and "not UTF-8" in enc[0].title
+
+
+def test_zenodo_grants_without_id_are_parsed(tmp_path):
+    # zenodo 17193374 / 18492962: grants use "code" + "funder", which became [None] and
+    # made "Funding present" and "NIH award number present" true for DFG/DOE grants.
+    import json
+    from data_ready.metadata import load_metadata
+    rec = tmp_path / "record.json"
+    rec.write_text(json.dumps({"metadata": {"title": "T", "grants": [
+        {"code": "268236062", "funder": {"name": "Deutsche Forschungsgemeinschaft"}}]}}))
+    md, _ = load_metadata(rec)
+    assert md["funding"] == ["Deutsche Forschungsgemeinschaft: 268236062"]
+    f = run(tmp_path, "nih-dms", metadata=md)
+    nih = next(x for x in f if "NIH award number" in x.title)
+    assert nih.status == "fail" and "Deutsche" in nih.detail
+
+
+def test_nih_award_recognised():
+    from pathlib import Path as P
+    md = {"funding": ["National Institute of General Medical Sciences: 1R01GM123456-01"]}
+    f = run(P(__file__).parent / "fixtures" / "good_dataset", "nih-dms", metadata=md)
+    assert next(x for x in f if "NIH award number" in x.title).status == "pass"
+
+
+def test_license_file_disagreeing_with_metadata(tmp_path):
+    (tmp_path / "LICENSE").write_text("MIT License\nPermission is hereby granted, free of charge")
+    f = run(tmp_path, "zenodo", metadata={"license": "CC-BY-4.0"})
+    lic = [x for x in f if x.check == "license"]
+    assert len(lic) == 1 and lic[0].status == "warn" and "MIT" in lic[0].title
+
+
+def test_readme_title_label_is_stripped():
+    # zenodo 7717258: "# Title: Where should they come from?..." became the title verbatim.
+    from data_ready.metadata import infer_from_readme
+    assert infer_from_readme("# Title: Where should they come from?\n")["title"] == "Where should they come from?"
+
+
+def test_draft_does_not_assume_open_access():
+    from data_ready import draft
+    assert draft.zenodo_json({}, {})["access_right"].startswith("TODO")
+
+
+def test_zenodo_cc_zero_is_cc0_for_dryad(tmp_path):
+    # zenodo 7717258 / 4988910: Zenodo's id "cc-zero" was rejected as "not CC0".
+    (tmp_path / "a.csv").write_text("a\n1\n")
+    for lic in ("cc-zero", "CC0-1.0", "cc0", "Creative Commons Zero v1.0 Universal"):
+        f = [x for x in run(tmp_path, "dryad", metadata={"license": lic}) if x.check == "license"]
+        assert f[0].status == "pass", lic
+    f = [x for x in run(tmp_path, "dryad", metadata={"license": "cc-by-4.0"}) if x.check == "license"]
+    assert f[0].status == "fail"
+
+
+def test_no_pii_pass_when_nothing_was_inspected(tmp_path):
+    # dataverse DVN/25628: "No obvious personal identifiers in 0 tabular file(s)" was a pass.
+    (tmp_path / "d.dta").write_bytes(b"\x00")
+    s = [x for x in run(tmp_path) if x.check == "sensitive"]
+    assert [x.status for x in s] == ["info"]
+
+
+def test_missing_checksum_manifest_is_optional_info(tmp_path):
+    # Every held-out dataset got a WARN, but no supported repository requires a manifest.
+    (tmp_path / "a.csv").write_text("a\n1\n")
+    c = [x for x in run(tmp_path) if x.check == "checksums"]
+    assert c[0].status == "info" and "optional" in c[0].title
+
+
+def test_ooxml_not_called_proprietary(tmp_path):
+    # osf pu9rd / DVN DHDNIC: .xlsx/.docx are ISO standards; "proprietary/closed" overstated it.
+    (tmp_path / "a.xlsx").write_bytes(b"PK")
+    t = [x.title for x in run(tmp_path) if x.check == "formats"]
+    assert t == ["1 .xlsx file(s): an open format is preferred"]
+
+
+def test_no_readme_mentions_unchecked_archive(tmp_path):
+    # zenodo 17193374: the only file is a zip that may contain the README.
+    import zipfile
+    with zipfile.ZipFile(tmp_path / "all.zip", "w") as z:
+        z.writestr("README.txt", "hi")
+    r = [x for x in run(tmp_path, "dryad") if x.check == "readme"][0]
+    assert r.status == "fail" and "all.zip" in r.detail

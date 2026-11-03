@@ -19,7 +19,6 @@ recommended_metadata:
   - {field: description, label: "Description", why: "Shown on the record page and indexed for search.", source: "https://help.zenodo.org/docs/deposit/describe-records/"}
   - {field: keywords, label: "Keywords", min_count: 1, why: "Improves discoverability.", source: "https://help.zenodo.org/docs/deposit/describe-records/"}
   - {field: funding, label: "Funding", why: "Links the record to the grant (needed for funder reporting).", source: "https://help.zenodo.org/docs/deposit/describe-records/"}
-  - {field: version, label: "Version", why: "Lets later uploads become new versions of the same concept DOI.", source: "https://help.zenodo.org/docs/deposit/describe-records/"}
   - {field: creator_affiliation, label: "Creator affiliations", why: "Optional per creator, but expected by most funders.", source: "https://help.zenodo.org/docs/deposit/describe-records/"}
   - {field: creator_orcid, label: "Creator ORCID iDs", why: "Unambiguous author identification.", source: "https://help.zenodo.org/docs/deposit/describe-records/"}
 

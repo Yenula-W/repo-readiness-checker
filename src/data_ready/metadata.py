@@ -58,6 +58,19 @@ def _creator(c: Any) -> Dict[str, str]:
     return {k: v for k, v in out.items() if v}
 
 
+def _grant(g: Any) -> Optional[str]:
+    """'Funder name: award code' from Zenodo/InvenioRDM grant objects or plain strings."""
+    if not isinstance(g, dict):
+        return str(g) if g else None
+    funder = g.get("funder")
+    funder = funder.get("name") if isinstance(funder, dict) else funder
+    award = g.get("code") or g.get("number") or g.get("id") or g.get("awardNumber")
+    if isinstance(award, dict):
+        award = award.get("number") or award.get("id")
+    parts = [str(x) for x in (funder, award) if x]
+    return ": ".join(parts) or None
+
+
 def _license(v: Any) -> Optional[str]:
     if isinstance(v, dict):
         return v.get("id") or v.get("identifier") or v.get("rightsIdentifier") or v.get("name")
@@ -83,7 +96,8 @@ def normalize(raw: Dict[str, Any], fmt: str) -> Dict[str, Any]:
             "license": _license(a.get("rightsList")),
             "publication_date": str(a.get("publicationYear") or "") or None,
             "resource_type": (a.get("types") or {}).get("resourceTypeGeneral"),
-            "funding": [f.get("awardNumber") or f.get("funderName") for f in a.get("fundingReferences", [])],
+            "funding": [": ".join(x for x in (f.get("funderName"), f.get("awardNumber")) if x)
+                        for f in a.get("fundingReferences", []) if f.get("funderName") or f.get("awardNumber")],
             "related_identifiers": [r.get("relatedIdentifier") for r in a.get("relatedIdentifiers", [])],
             "version": a.get("version"),
         }
@@ -113,8 +127,7 @@ def normalize(raw: Dict[str, Any], fmt: str) -> Dict[str, Any]:
             "publication_date": m.get("publication_date"),
             "resource_type": m.get("upload_type") or rt or m.get("item_type"),
             "subjects": _as_list(m.get("subjects") or m.get("categories") or m.get("research_domain")),
-            "funding": [g.get("id") if isinstance(g, dict) else g
-                        for g in _as_list(m.get("grants") or m.get("funding"))],
+            "funding": [_grant(g) for g in _as_list(m.get("grants") or m.get("funding"))],
             "related_identifiers": [r.get("identifier") if isinstance(r, dict) else r
                                     for r in _as_list(m.get("related_identifiers") or m.get("related_works"))],
             "methods": m.get("method") or m.get("methods") or m.get("notes"),
@@ -122,6 +135,7 @@ def normalize(raw: Dict[str, Any], fmt: str) -> Dict[str, Any]:
             "journal": m.get("journal_title") or m.get("journal"),
         }
         out["subjects"] = [s.get("term") if isinstance(s, dict) else s for s in out["subjects"]]
+    out = {k: ([x for x in v if x not in (None, "")] if isinstance(v, list) else v) for k, v in out.items()}
     return {k: v for k, v in out.items() if v not in (None, "", [], {})}
 
 
@@ -164,6 +178,22 @@ LICENSE_PATTERNS = [
 ]
 
 
+LICENSE_ALIASES = {
+    "cc0-1.0": ["cc0", "cc-zero", "cc0-1.0", "cc-0", "creative commons zero", "public domain dedication",
+                "cc0 1.0 universal"],
+    "cc-by-4.0": ["cc-by-4.0", "cc-by", "cc by 4.0", "creative commons attribution 4.0"],
+}
+
+
+def canonical_license(value: Any) -> str:
+    """Map repository-specific license ids (Zenodo 'cc-zero', 'CC0 1.0') to one SPDX-like id."""
+    v = str(value or "").strip().lower()
+    for spdx, aliases in LICENSE_ALIASES.items():
+        if v in aliases or any(v.startswith(a) for a in aliases if len(a) > 6):
+            return spdx
+    return v
+
+
 def detect_license_text(text: str) -> Optional[str]:
     for spdx, pat in LICENSE_PATTERNS:
         if re.search(pat, text, re.I):
@@ -176,7 +206,9 @@ def infer_from_readme(text: str) -> Dict[str, str]:
     out: Dict[str, str] = {}
     m = re.search(r"^#\s+(.+)$", text, re.M)
     if m:
-        out["title"] = m.group(1).strip()
+        # "# Title: My data" -> "My data"; strip Markdown emphasis.
+        title = re.sub(r"^(title|dataset|data set)\s*[:\-–]\s*", "", m.group(1).strip(), flags=re.I)
+        out["title"] = title.strip("*_ ").strip()
     for block in re.split(r"\n\s*\n", text):
         b = block.strip()
         if b and not b.startswith(("#", "-", "*", "|", "```", "<", "!")) and len(b) > 40:

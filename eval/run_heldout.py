@@ -20,6 +20,9 @@ def main():
         out = results / ds.name
         cmd = [sys.executable, "-m", "data_ready", "check", str(ds / "data"), "--out", str(out),
                "--format", "summary"]
+        # Zenodo records are a supported metadata format; use them as the "author's metadata".
+        if ds.name.startswith("zenodo_") and "--with-metadata" in sys.argv:
+            cmd += ["-m", str(ds / "record.json")]
         for t in TARGETS:
             cmd += ["-t", t]
         t0 = time.perf_counter()

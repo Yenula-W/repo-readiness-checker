@@ -10,7 +10,7 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from .metadata import detect_license_text
+from .metadata import canonical_license, detect_license_text
 from .scan import FileInfo
 
 PASS, WARN, FAIL, INFO = "pass", "warn", "fail", "info"
@@ -171,6 +171,13 @@ def _check_field(ctx: Context, spec: Dict, required: bool) -> Finding:
     if spec.get("min_length") and isinstance(value, str) and len(value.strip()) < spec["min_length"]:
         return Finding("metadata", bad, f"{kind}: {label} is too short", why,
                        f"Expand the {label.lower()} to at least {spec['min_length']} characters.", src)
+    if spec.get("pattern"):
+        values = value if isinstance(value, list) else [value]
+        if not any(re.search(spec["pattern"], str(v), re.I) for v in values):
+            shown = "; ".join(str(v) for v in values)[:160]
+            return Finding("metadata", bad, f"{kind}: {label} not found",
+                           f"{why} Listed: {shown}. None of these looks like {spec.get('pattern_label', 'the expected value')}.",
+                           spec.get("pattern_fix", f"Add the {label.lower()} to your metadata."), src)
     if origin == "inferred":
         return Finding("metadata", WARN, f"{kind}: {label} only found in README/LICENSE",
                        f"Inferred value: {str(value)[:120]!r}. Repositories need it entered as metadata.",
@@ -213,7 +220,7 @@ def check_license(ctx: Context) -> List[Finding]:
     out = []
     if only:
         lic = str(found or "")
-        if found and not any(o.lower().replace("-1.0", "") in lic.lower() for o in only):
+        if found and canonical_license(lic) not in {canonical_license(o) for o in only}:
             out.append(Finding("license", FAIL, f"License '{found}' is not accepted",
                                rules.get("message", ""), f"Use {', '.join(only)} or deposit elsewhere.", src))
         elif found:
@@ -224,7 +231,14 @@ def check_license(ctx: Context) -> List[Finding]:
                                rules.get("message", ""),
                                "Make sure no file carries terms that conflict with this.", src))
         return out
-    if found:
+    in_metadata_rules = any(s.get("field") == "license" for s in ctx.rules.get("required_metadata", []))
+    if md_lic and in_metadata_rules and not (file_lic and canonical_license(file_lic) != canonical_license(md_lic)):
+        return out  # already reported by the metadata check
+    if md_lic and file_lic and canonical_license(file_lic) != canonical_license(md_lic):
+        out.append(Finding("license", WARN, f"Metadata says {md_lic} but {lic_file.rel} looks like {file_lic}",
+                           "Reusers will not know which terms apply.", "Make the LICENSE file and metadata agree.",
+                           src, [lic_file.rel]))
+    elif found:
         where = "metadata" if md_lic else f"{lic_file.rel}"
         out.append(Finding("license", PASS, f"License: {found} (from {where})", source=src))
     elif lic_file:
@@ -233,7 +247,6 @@ def check_license(ctx: Context) -> List[Finding]:
                            "Name the license with its SPDX id (e.g. CC-BY-4.0, CC0-1.0) in your metadata.", src,
                            [lic_file.rel]))
     else:
-        in_metadata_rules = any(s.get("field") == "license" for s in ctx.rules.get("required_metadata", []))
         sev = INFO if in_metadata_rules else FAIL if rules.get("required") else WARN
         out.append(Finding("license", sev, "No LICENSE file or license metadata found",
                            "Without a license, others cannot legally reuse the data.",
@@ -282,8 +295,11 @@ def check_readme(ctx: Context) -> List[Finding]:
                            f"Rename or convert {like.rel} to {want}.", src, [like.rel]))
     elif ctx.readme is None:
         sev = FAIL if rules.get("required") else WARN
+        archives = [f.rel for f in ctx.files if _is_archive(f.rel)]
+        hint = (f" A README may be inside {', '.join(archives[:3])}, which was not unpacked; "
+                "repositories and reusers need it outside the archive." if archives else "")
         return [Finding("readme", sev, "No README found",
-                        "A README is how reusers learn what each file and column means.",
+                        "A README is how reusers learn what each file and column means." + hint,
                         "Add README.md at the top level describing the files, columns, units and missing-value codes.",
                         src)]
     else:
@@ -361,7 +377,7 @@ def check_formats(ctx: Context) -> List[Finding]:
                                              for g in ctx.files for e in (".csv", ".tsv", ".h5", ".nc", ".pdf", ".parquet"))]
             rest = [x for x in rels if x not in twins]
             if rest:
-                out.append(Finding("formats", WARN, f"{len(rest)} {ext} file(s) in a proprietary/closed format",
+                out.append(Finding("formats", WARN, f"{len(rest)} {ext} file(s): an open format is preferred",
                                    "", r["suggest"], r.get("source", ""), rest))
     if not any(o.status != PASS for o in out):
         out.append(Finding("formats", PASS, "All file formats are open or accepted"))
@@ -489,8 +505,10 @@ def check_sensitive(ctx: Context) -> List[Finding]:
                            "This tool reads CSV/TSV/TXT and .xlsx only. Check these files by hand.",
                            "Review these files for names, contact details, dates of birth and record numbers.",
                            sd.get("source", ""), uninspected))
+    checked = sum(1 for f in ctx.files if f.columns and f.rel not in ctx.doc_files)
+    if not hits and checked == 0:
+        return out  # nothing was inspected, so claim nothing
     if not hits:
-        checked = sum(1 for f in ctx.files if f.columns and f.rel not in ctx.doc_files)
         out.append(Finding("sensitive", PASS, f"No obvious personal identifiers in {checked} tabular file(s)",
                            "Heuristic only: checks column names and the first 2,000 rows. It does not replace a disclosure review.",
                            source=sd.get("source", "")))
@@ -526,9 +544,10 @@ def check_checksums(ctx: Context) -> List[Finding]:
     names = {n.lower() for n in cs.get("manifest_names", [])}
     manifests = [f for f in ctx.files if Path(f.rel).name.lower() in names]
     if not manifests:
-        return [Finding("checksums", WARN, "No checksum manifest",
-                        "A manifest lets you and the repository prove files were not corrupted in transfer.",
-                        "Run `data-ready check <path> --write-manifest` to create manifest-sha256.txt.", src)]
+        return [Finding("checksums", INFO, "No checksum manifest (optional)",
+                        "None of the supported repositories requires one; they compute their own checksums on upload. "
+                        "A manifest lets you prove files were not corrupted between your lab and the repository.",
+                        "Optional: run `data-ready check <path> --write-manifest` to create manifest-sha256.txt.", src)]
     out = []
     by_rel = {f.rel: f for f in ctx.files}
     for m in manifests:
@@ -600,7 +619,7 @@ def check_sizes(ctx: Context) -> List[Finding]:
             out.append(Finding("size", WARN, f"{len(big)} file(s) larger than recommended {human(sl['recommended_max_file_bytes'])}",
                                "Large files are hard for reusers to download.", "Consider splitting them.", src, big))
     if len(out) == (1 if empty else 0):  # nothing over a limit
-        out.append(Finding("size", PASS, f"{len(ctx.files)} files, {human(total)} total — within limits", source=src))
+        out.append(Finding("size", PASS, f"{len(ctx.files)} file(s), {human(total)} total — within limits", source=src))
     return out
 
 
