@@ -16,7 +16,7 @@ independent.
 | 3 | Held-out run on 20+ real inputs, zero crashes | **Met.** 46 datasets in two independent sets (Zenodo, Dryad-curated, Figshare, Dataverse, OSF), 0 crashes |
 | 4 | Hand-checked precision ≥ 90 % overall, no check type < 80 % | **Partly met on the untouched sample: 91.7 % overall, but encoding (2/3), README (5/7) and PII (5/7) were below 80 %.** All 5 errors were then fixed with regression tests (60/60 on re-judging, not an independent estimate). See [§4b](#4b-fresh-untouched-held-out-sample-round-3) |
 | 5 | Never invents or overstates | **Met after fixes.** 9 overstated or invented outputs found and fixed (listed below) |
-| 6 | CI green on GitHub, repo private | **Met.** Run 41552597005: 4/4 jobs green; repo `PRIVATE` |
+| 6 | CI green on GitHub, repo private | **Met.** Run 41562437197 on `d12da53`: 4/4 jobs green; repo `PRIVATE` |
 | 7 | This file | Done |
 
 ## 1. Robustness
