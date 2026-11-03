@@ -727,3 +727,5 @@ reports `PRIVATE`).
 - **Runtime:** large `.xlsx` workbooks take about 3 s each to open.
 - **Rules can go stale:** the rule files were verified on 2026-11-02 against the cited pages.
   Dryad's live upload limits and Figshare institutional instances may differ.
+
+Added after the ship-bar rounds (2026-11-03): the summary now explains what "not provided" means. It is an output message only, and no check or rule changed.

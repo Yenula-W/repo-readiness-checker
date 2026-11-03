@@ -102,6 +102,9 @@ def _check(args: argparse.Namespace) -> int:
             for f in t["findings"]:
                 if f["status"] in ("fail", "warn"):
                     print(f"  [{f['status'].upper()}] {f['title']}")
+        if any(f["title"].endswith(" not provided") for t in rep["targets"] for f in t["findings"]):
+            print("\n\"not provided\" means no metadata file gave that field. You can fill these in on the deposit "
+                  "form, or start a file with --draft-metadata zenodo.")
         if not out_dir:
             print("\nFull report: add --out <dir> (Markdown + JSON) or --format markdown.")
 

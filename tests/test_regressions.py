@@ -467,3 +467,11 @@ def test_target_topics_keep_common_keywords(tmp_path):
     (tmp_path / "README.md").write_text("# T\n\nFiles: a.csv. Columns: x (mg/kg). '-' means not applicable.\n")
     (tmp_path / "a.csv").write_text("x\n1\n")
     assert not any("Missing data codes" in x.detail for x in by_check(run(tmp_path, "dryad"), "readme"))
+
+
+def test_summary_explains_not_provided(tmp_path, capsys):
+    # zenodo 18549093: a first run with no metadata file read as five unexplained FAILs.
+    from data_ready.cli import main
+    (tmp_path / "a.csv").write_text("x\n1\n")
+    main(["check", str(tmp_path), "--target", "zenodo", "--no-hash"])
+    assert "fill these in on the deposit form" in capsys.readouterr().out
