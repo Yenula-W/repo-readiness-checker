@@ -99,7 +99,7 @@ See [docs/real-world-test.md](docs/real-world-test.md) for a run on five public 
 
 ## Limitations
 
-See [EVALUATION.md](EVALUATION.md) for the held-out tests on 108 public datasets and the hand-checked precision (95.9 % on the latest untouched sample).
+See [EVALUATION.md](EVALUATION.md) for the held-out tests on 208 public datasets and the hand-checked precision (98.6 % on the latest untouched sample, round 8). The stricter ship bar (two passing untouched rounds in a row) is not yet met.
 
 - The README checks look for keywords and names. They can tell whether a column is *mentioned*, not whether it is explained well.
 - PII detection reads only CSV/TSV/TXT and `.xlsx` files. It checks column names and the first 2,000 rows (4 MB). The header patterns are in English only, and it does not read free text, images, `.xls`, SPSS, Stata or other formats.
