@@ -501,6 +501,10 @@ PII_PREFIX = re.compile(r"^([a-z]{0,3}\d+[a-z]?|respondent|participant|patient|s
 NO_PREFIX_MATCH = {"sin", "cell", "tel", "mobile", "fax", "zip", "lat", "lon", "long", "lng", "address", "street", "ip"}
 
 
+PLACEHOLDER_VALUE = re.compile(r"^(anonymous|anon|anonymi[sz]ed|redacted|removed|withheld|hidden|deleted|"
+                               r"not provided|n/?a|none|null|-+|x+|\*+)$", re.I)
+
+
 def _header_candidates(h: str) -> List[str]:
     """'q5_postcode' -> ['q5_postcode', 'postcode'] when everything dropped looks like a prefix."""
     tokens = h.split("_")
@@ -562,9 +566,13 @@ def check_sensitive(ctx: Context) -> List[Finding]:
                 if _looks_like_people(values):
                     hits[f.rel].append(f"column '{col}' contains values that look like people's names")
                 continue
+            filled = [v for v in values if v]
+            if filled and all(PLACEHOLDER_VALUE.match(v) for v in filled):
+                continue  # e.g. MS Forms 'Email' column holding 'anonymous' in every row
             kind = _match_header(h, PII_HEADERS)
+            if kind == "email address" and filled and not any("@" in v for v in filled):
+                kind = None  # an 'Email' column without a single address (e.g. a yes/no consent answer)
             if kind:
-                filled = [v for v in values if v]
                 masked = filled and all(re.search(r"[*]|x{2,}|#{2,}", v, re.I) for v in filled)
                 note = f" (values appear partly masked, e.g. {filled[0]!r}; check the masking is enough)" if masked else ""
                 hits[f.rel].append(f"column '{col}' looks like {kind}{note}")

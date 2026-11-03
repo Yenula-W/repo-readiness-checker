@@ -144,7 +144,8 @@ def normalize(raw: Dict[str, Any], fmt: str) -> Dict[str, Any]:
             "funding": [_grant(g) for g in _as_list(m.get("grants") or m.get("funding"))],
             "related_identifiers": [r.get("identifier") if isinstance(r, dict) else r
                                     for r in _as_list(m.get("related_identifiers") or m.get("related_works"))],
-            "methods": m.get("method") or m.get("methods") or m.get("notes"),
+            # Not 'notes': Zenodo's "Additional notes" often hold usage notes, not methods.
+            "methods": m.get("method") or m.get("methods"),
             "version": m.get("version"),
             "journal": m.get("journal_title") or m.get("journal"),
         }

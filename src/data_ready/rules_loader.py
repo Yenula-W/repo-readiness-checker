@@ -20,6 +20,16 @@ def _deep_merge(base: dict, override: dict) -> dict:
     return out
 
 
+def _extend_topic_keywords(base: dict, override: dict) -> None:
+    """A README topic redefined by a target keeps the parent's keywords for the same topic id,
+    so a keyword added to _common (e.g. 'not applicable' for missing codes) reaches every target."""
+    parent = {t.get("id"): t for t in (base.get("readme") or {}).get("topics", []) if isinstance(t, dict)}
+    for t in (override.get("readme") or {}).get("topics", []) or []:
+        p = parent.get(t.get("id")) if isinstance(t, dict) else None
+        if p:
+            t["keywords"] = list(dict.fromkeys(list(t.get("keywords", [])) + list(p.get("keywords", []))))
+
+
 def available_targets(extra_dir: Optional[Path] = None) -> List[str]:
     dirs = [RULES_DIR] + ([extra_dir] if extra_dir else [])
     names = set()
@@ -49,6 +59,8 @@ def load_target(name: str, extra_dir: Optional[Path] = None) -> Dict:
     data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
     parent = data.pop("extends", None)
     if parent:
-        data = _deep_merge(load_target(parent, extra_dir), data)
+        base = load_target(parent, extra_dir)
+        _extend_topic_keywords(base, data)
+        data = _deep_merge(base, data)
     data.setdefault("id", path.stem)
     return data

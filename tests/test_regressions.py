@@ -1,5 +1,6 @@
 """Regression tests for wrong results found by hand-checking the held-out real-world run.
 Each test names the public dataset where the problem was seen (see EVALUATION.md)."""
+import json
 from pathlib import Path
 
 import pytest
@@ -436,3 +437,33 @@ def test_ambiguous_words_are_not_matched_after_a_prefix(tmp_path):
     # 'grid_cell' or 'q1_lat' must not count as a phone number / coordinates by prefix stripping.
     (tmp_path / "a.csv").write_text("q1_cell,angle_sin,site_lat\n1,0.5,3\n")
     assert not any("PII" in x.title for x in by_check(run(tmp_path), "sensitive"))
+
+
+# --- round 7 (eval/precision_round7_untouched.csv) ---------------------------
+
+def test_zenodo_notes_are_not_methods(tmp_path):
+    # zenodo 5023989: 'notes' held Dryad usage notes describing files, reported as "Methods present".
+    from data_ready.metadata import load_metadata
+    p = tmp_path / "record.json"
+    p.write_text(json.dumps({"metadata": {"title": "T", "notes": "jpeg-scans.zip: JPEGs of plate scans."}}))
+    assert not load_metadata(p)[0].get("methods")
+
+
+def test_anonymous_email_column_is_not_pii(tmp_path):
+    # zenodo 11581466: MS Forms export, 'Email' is 'anonymous' in every row and 'Name' is empty.
+    (tmp_path / "raw.csv").write_text("ID,Email,Name,Answer\n1,anonymous,,ok\n2,anonymous,,fine\n")
+    assert not any("PII" in x.title for x in by_check(run(tmp_path, "dryad"), "sensitive"))
+
+
+def test_email_column_without_addresses_is_not_pii(tmp_path):
+    (tmp_path / "raw.csv").write_text("id,email_consent\n1,yes\n2,no\n")
+    assert not any("PII" in x.title for x in by_check(run(tmp_path), "sensitive"))
+    (tmp_path / "raw.csv").write_text("id,email\n1,a.person@uni.edu\n")
+    assert any("PII" in x.title for x in by_check(run(tmp_path), "sensitive"))
+
+
+def test_target_topics_keep_common_keywords(tmp_path):
+    # dryad.yaml redefines the 'missing' topic; 'not applicable' from _common must still count.
+    (tmp_path / "README.md").write_text("# T\n\nFiles: a.csv. Columns: x (mg/kg). '-' means not applicable.\n")
+    (tmp_path / "a.csv").write_text("x\n1\n")
+    assert not any("Missing data codes" in x.detail for x in by_check(run(tmp_path, "dryad"), "readme"))
