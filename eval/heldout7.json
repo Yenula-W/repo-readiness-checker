@@ -1,0 +1,142 @@
+[
+ {
+  "source": "zenodo",
+  "id": "19476479",
+  "why": "Spanish student digital-skills CSVs, not UTF-8"
+ },
+ {
+  "source": "zenodo",
+  "id": "19700582",
+  "why": "Spanish academic-performance CSVs, not UTF-8"
+ },
+ {
+  "source": "zenodo",
+  "id": "21315406",
+  "why": "Spanish teacher AI survey CSV, not UTF-8"
+ },
+ {
+  "source": "zenodo",
+  "id": "7302797",
+  "why": "German soil chemistry CSVs, not UTF-8 + docx documentation"
+ },
+ {
+  "source": "zenodo",
+  "id": "7702380",
+  "why": "README.md itself not UTF-8"
+ },
+ {
+  "source": "zenodo",
+  "id": "6907423",
+  "why": "Flintbek archaeology txt/csv, not UTF-8 + .mdb"
+ },
+ {
+  "source": "zenodo",
+  "id": "5716344",
+  "why": "ReadMe.doc + xls"
+ },
+ {
+  "source": "zenodo",
+  "id": "4991385",
+  "why": "README .doc + .sav"
+ },
+ {
+  "source": "zenodo",
+  "id": "4967853",
+  "why": "One README_for_X.doc per CSV"
+ },
+ {
+  "source": "zenodo",
+  "id": "4925406",
+  "why": "ReadMe.docx + CSV"
+ },
+ {
+  "source": "zenodo",
+  "id": "23477655",
+  "why": "MANIFEST.TXT + Readme txt"
+ },
+ {
+  "source": "zenodo",
+  "id": "22201051",
+  "why": "README_V01.md + CSVs"
+ },
+ {
+  "source": "zenodo",
+  "id": "23798212",
+  "why": "README.txt + raw xlsx (N97/N101/N144)"
+ },
+ {
+  "source": "zenodo",
+  "id": "23917690",
+  "why": "datapackage.json + PDF documentation + TSVs"
+ },
+ {
+  "source": "zenodo",
+  "id": "19818299",
+  "why": "Heritage Spanish dataset with phone-like column"
+ },
+ {
+  "source": "zenodo",
+  "id": "3719291",
+  "why": "TCGA clinical CSVs with birth column"
+ },
+ {
+  "source": "zenodo",
+  "id": "23678828",
+  "why": "Justice of the Peace signing locations"
+ },
+ {
+  "source": "zenodo",
+  "id": "23820778",
+  "why": "Bushfire incidents with coordinates"
+ },
+ {
+  "source": "zenodo",
+  "id": "15751158",
+  "why": "Th-229 frequency record CSV + zip"
+ },
+ {
+  "source": "zenodo",
+  "id": "23915012",
+  "why": "Likert survey xlsx only"
+ },
+ {
+  "source": "zenodo",
+  "id": "23317353",
+  "why": "Policy xlsx files"
+ },
+ {
+  "source": "osf",
+  "id": "8sm4b",
+  "why": "CSVs + data_dictionary.xlsx"
+ },
+ {
+  "source": "osf",
+  "id": "yubza",
+  "why": "README.md + CSV + code"
+ },
+ {
+  "source": "osf",
+  "id": "ze3ha",
+  "why": "Deidentified CSV + codebook CSV"
+ },
+ {
+  "source": "osf",
+  "id": "95anh",
+  "why": "Spanish README.txt + folders"
+ },
+ {
+  "source": "figshare",
+  "id": "34788003",
+  "why": "Two CSVs, no README"
+ },
+ {
+  "source": "figshare",
+  "id": "32747805",
+  "why": "Indonesian CSVs + R script"
+ },
+ {
+  "source": "figshare",
+  "id": "34841280",
+  "why": "Train/test split CSV + README.md"
+ }
+]
