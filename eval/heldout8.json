@@ -1,0 +1,137 @@
+[
+ {
+  "source": "zenodo",
+  "id": "4995098",
+  "why": "German/English medical-school survey; README txt files not UTF-8"
+ },
+ {
+  "source": "zenodo",
+  "id": "20982926",
+  "why": "Spanish UEQ questionnaire CSV, not UTF-8"
+ },
+ {
+  "source": "zenodo",
+  "id": "19390301",
+  "why": "French renovation survey CSV + dictionary, not UTF-8; docx + xlsx metadata"
+ },
+ {
+  "source": "zenodo",
+  "id": "13318298",
+  "why": "French aerosol CSV, not UTF-8; Readme.docx"
+ },
+ {
+  "source": "zenodo",
+  "id": "14905174",
+  "why": "German citizen-science codebook CSV, not UTF-8"
+ },
+ {
+  "source": "zenodo",
+  "id": "3977957",
+  "why": "Olympic athletes CSVs with names and birth dates"
+ },
+ {
+  "source": "zenodo",
+  "id": "13379011",
+  "why": "Ship carbonate data with coordinates"
+ },
+ {
+  "source": "zenodo",
+  "id": "14637409",
+  "why": "Text corpus CSVs with 'SSN'-like column"
+ },
+ {
+  "source": "zenodo",
+  "id": "23917022",
+  "why": "Dyslexia prevalence in schoolchildren, xlsx"
+ },
+ {
+  "source": "zenodo",
+  "id": "4978521",
+  "why": "README .rtf + zip"
+ },
+ {
+  "source": "zenodo",
+  "id": "4941350",
+  "why": "README .rtf + zip"
+ },
+ {
+  "source": "zenodo",
+  "id": "4938365",
+  "why": "README.txt + CSVs with spaces in names"
+ },
+ {
+  "source": "zenodo",
+  "id": "21850685",
+  "why": "README.docx + CSV + PDFs"
+ },
+ {
+  "source": "zenodo",
+  "id": "21474065",
+  "why": "README.docx + xlsx"
+ },
+ {
+  "source": "zenodo",
+  "id": "18217417",
+  "why": "Readme.docx + notebook"
+ },
+ {
+  "source": "zenodo",
+  "id": "4975779",
+  "why": "Many CSVs + R, no README"
+ },
+ {
+  "source": "zenodo",
+  "id": "23917732",
+  "why": "Single LCA xlsx"
+ },
+ {
+  "source": "zenodo",
+  "id": "23916346",
+  "why": "Cyrillic file name xlsx"
+ },
+ {
+  "source": "zenodo",
+  "id": "6321575",
+  "why": "Figure CSVs + xlsx, no README"
+ },
+ {
+  "source": "osf",
+  "id": "ruaf2",
+  "why": "Clinical MRI raw xlsx"
+ },
+ {
+  "source": "osf",
+  "id": "f74rc",
+  "why": "DATA-DICTIONARY.md + CSV + report"
+ },
+ {
+  "source": "osf",
+  "id": "r7u23",
+  "why": "README.md + nested folders",
+  "note": "partial download (folder skeleton only); its sampled findings excluded"
+ },
+ {
+  "source": "osf",
+  "id": "7vfx8",
+  "why": "xlsx + prompt txt",
+  "note": "not run: download did not complete"
+ },
+ {
+  "source": "figshare",
+  "id": "27040849",
+  "why": "Anonymised clinical CSVs",
+  "note": "not run: download did not complete"
+ },
+ {
+  "source": "figshare",
+  "id": "34408851",
+  "why": "data_dictionary.csv + netCDF + CSVs",
+  "note": "not run: download did not complete"
+ },
+ {
+  "source": "figshare",
+  "id": "34804398",
+  "why": "GeoTIFF/gpkg + CSVs",
+  "note": "not run: download did not complete"
+ }
+]
