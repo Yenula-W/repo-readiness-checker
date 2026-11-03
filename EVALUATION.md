@@ -3,45 +3,46 @@
 Evaluated 2026-11-02/03 on commit `cdb3a4b` and later. Every item of `ADOPTION_BAR.md` and
 `SHIP_BAR.md` is listed below, with numbers. An item that is not fully met says so.
 
-**Ship bar: not met.** The ship bar needs two untouched rounds in a row that pass with no code change
-between them. Round 5 does not count (its errors were fixed afterwards). Of the three further rounds
-allowed, rounds 6 and 7 failed and round 8 passed, so the streak stands at one when the cap is reached
-([§4d](#4d-ship-bar-rounds-6-8)).
+**Ship bar: met on `d55f7df`.** Rounds 8 and 9 are two untouched rounds in a row that pass, with no
+code change between them (`d55f7df` to `97b2388` changed only docs and eval files). Rounds 6 and 7
+failed and were fixed ([§4d](#4d-ship-bar-rounds-6-9)). Round 5 does not count: its errors were fixed
+afterwards.
 
-**Latest untouched precision (round 8, code `d55f7df`): 71/72 = 98.6 %, every check type 87.5 % or
-higher, 0 crashes, 0 overstated claims.** Its one error, a licence named in a `* License:` bullet that
-was missed, is recorded but not fixed, so round 8 can still begin a streak on `d55f7df`.
+**Latest untouched precision (round 9, code `d55f7df`): 70/70 = 100 %, 0 crashes, 0 overstated
+claims.** Round 8 on the same code: 71/72 = 98.6 %. Round 8's one error (a licence named in a
+`* License:` README bullet, a miss) is recorded but not fixed, to keep the code frozen.
 
 | Untouched round | Datasets | Findings judged | Overall | Checks below 80 % | Overstated | Code |
 |---|---|---|---|---|---|---|
 | 3 | 20 | 60 | 91.7 % | encoding, readme, PII | — | `f2d4e97` |
 | 4 | 31 | 72 | 93.1 % | license (5/8) | 1 | `a035550` |
 | 5 | 31 | 73 | 95.9 % | none | 1 | `c6a59a2` |
-| 6 | 38 | 73 | 93.2 % | readme, PII (6/8 each) | 2 | `c6a59a2`+tests (`71ef979`) |
+| 6 | 38 | 73 | 93.2 % | readme, PII (6/8 each) | 2 | `aad0e98` (HEAD `71ef979`) |
 | 7 | 34 | 80 | 97.5 % | none | **2** | `c53a00d` |
 | **8** | **28** | **72** | **98.6 %** | **none** | **0** | **`d55f7df`** |
+| **9** | **22** | **70** | **100 %** | **none** | **0** | **`d55f7df`** |
 
 Each round's errors were fixed (with regression tests) only after its verdicts were committed.
 Rounds 1–2 were measured on the set used while fixing, so they are not independent.
 
 | # | Bar item | Status |
 |---|---|---|
-| 1 | Never crashes on messy input | **Met.** 17 robustness tests; 3 crash/hang classes found and fixed; 0 crashes in any held-out run (416 on the final code `d55f7df`) |
+| 1 | Never crashes on messy input | **Met.** 17 robustness tests; 3 crash/hang classes found and fixed; 0 crashes in any held-out run (460 on the final code `d55f7df`) |
 | 2 | Clean install from GitHub on 3.9 / 3.12 / 3.13, README quickstart verbatim | **Met** (macOS, fresh venvs) |
-| 3 | Held-out run on 20+ real inputs, zero crashes | **Met.** 208 datasets in seven sets (Zenodo, Dryad-curated, Figshare, Dataverse, OSF), 0 crashes. All 208 re-run on the final code `d55f7df`, with and without metadata: 416 runs, 0 crashes |
-| 4 | Hand-checked precision ≥ 90 % overall, no check type < 80 % | **Met on the round-8 untouched sample: 71/72 = 98.6 %, lowest check 87.5 %** (license 7/8). Also met in rounds 5 and 7; rounds 3, 4 and 6 missed the per-check floor; see [§4c](#4c-untouched-rounds-4-and-5) and [§4d](#4d-ship-bar-rounds-6-8) |
-| 5 | Never invents or overstates | **Met after fixes; 0 in round 8.** 9 overstated or invented outputs found in rounds 1–2, one each in rounds 4 and 5, two each in rounds 6 and 7 (§4d); all fixed |
+| 3 | Held-out run on 20+ real inputs, zero crashes | **Met.** 230 datasets in eight sets (Zenodo, Dryad-curated, Figshare, Dataverse, OSF), 0 crashes. All 230 run on the final code `d55f7df`, with and without metadata: 460 runs, 0 crashes |
+| 4 | Hand-checked precision ≥ 90 % overall, no check type < 80 % | **Met on the round-9 untouched sample: 70/70 = 100 %**, and on round 8 (71/72 = 98.6 %, lowest check license 7/8). Also met in rounds 5 and 7; rounds 3, 4 and 6 missed the per-check floor; see [§4c](#4c-untouched-rounds-4-and-5) and [§4d](#4d-ship-bar-rounds-6-9) |
+| 5 | Never invents or overstates | **Met after fixes; 0 in round 8.** 9 overstated or invented outputs found in rounds 1–2, one each in rounds 4 and 5, two each in rounds 6 and 7 (§4d); all fixed; none in rounds 8 and 9 |
 | 6 | CI green on GitHub, repo private | **Met.** Run 41640162671 on `b5256a8`: 4/4 jobs green (also green on `c53a00d`, `d55f7df`, `1bea570`); repo `PRIVATE` |
 | 7 | This file | Done |
 
 | Ship bar item | Status |
 |---|---|
-| 1. Two untouched rounds in a row pass (≥ 90 %, no check < 80 %, 0 crashes, 0 overstated) | **Not met.** Round 6 failed (readme, PII 6/8), round 7 failed (2 overstated claims), round 8 passed. Streak: 1 |
-| 2. No code change between those rounds | Round 8 ran on `d55f7df`; no code has changed since |
+| 1. Two untouched rounds in a row pass (≥ 90 %, no check < 80 %, 0 crashes, 0 overstated) | **Met.** Round 8 (98.6 %) and round 9 (100 %), 0 crashes, 0 overstated. Rounds 6 and 7 failed first |
+| 2. No code change between those rounds | **Met.** Both ran on `d55f7df`; `git diff d55f7df 97b2388 -- src pyproject.toml` is empty |
 | 3. Clean install on the final commit, Python 3.9 / 3.12 / 3.13, README quickstart verbatim | **Met** on `1bea570` (macOS, fresh venvs; [§2](#2-install-from-github)) |
 | 4. Tests pass with and without optional extras | **Met.** Without `openpyxl`: 100 passed, 3 skipped; with it: 103 passed (each Python version) |
-| 5. CI green, repo private, every round recorded | **Met.** Run 41640162671 on `b5256a8` green on 4/4 jobs; repo `PRIVATE`; rounds 3–8 are in §4b–§4d |
-| Cap | 3 rounds used (6, 7, 8). No check type failed in the last round, so none is made opt-in |
+| 5. CI green, repo private, every round recorded | **Met.** Run 41640162671 on `b5256a8` green on 4/4 jobs; repo `PRIVATE`; rounds 3–9 are in §4b–§4d |
+| Cap | Rounds 6–8 were the three allowed; round 9 was run at the parent session's request, with no code change. No check type is made opt-in |
 
 ## 1. Robustness
 
@@ -444,7 +445,7 @@ Each fix has a regression test ("round 4" and "round 5" in `tests/test_regressio
 
 </details>
 
-## 4d. Ship-bar rounds 6–8
+## 4d. Ship-bar rounds 6–9
 
 `SHIP_BAR.md` asks for two untouched rounds in a row that pass with no code change between them, at
 most three more rounds. A round passes with ≥ 90 % overall, no check type below 80 %, 0 crashes and
@@ -465,25 +466,29 @@ is not.
 | 6 | `71ef979` (= `aad0e98` code) | 20261107 | 38 (29 / 5 / 4) | 76 | 0 | 68/73 = 93.2 % | readme 6/8, PII 6/8 | 2 | **fail** |
 | 7 | `c53a00d` | 20261108 | 34 (25 / 6 / 3) | 68 | 0 | 78/80 = 97.5 % | metadata 7/8, PII 7/8 | 2 | **fail** |
 | 8 | `d55f7df` | 20261109 | 28 (21 / 4 / 3) | 56 | 0 | 71/72 = 98.6 % | license 7/8 | 0 | **pass** |
+| 9 | `d55f7df` (HEAD `75a2b26`) | 20261110 | 22 (19 / 3 / 0) | 44 | 0 | 70/70 = 100 % | all 100 % | 0 | **pass** |
 
 Per check (correct / judged):
 
-| Check | Round 6 | Round 7 | Round 8 |
-|---|---|---|---|
-| archives | 1/1 | 8/8 | 3/3 |
-| checksums | 8/8 | 8/8 | 8/8 |
-| encoding | 8/8 | 8/8 | 5/5 |
-| formats | 8/8 | 8/8 | 8/8 |
-| license | 7/8 | 8/8 | 7/8 |
-| metadata | 8/8 | 7/8 | 8/8 |
-| naming | 8/8 | 8/8 | 8/8 |
-| readme | **6/8** | 8/8 | 8/8 |
-| sensitive (PII) | **6/8** | 7/8 | 8/8 |
-| size | 8/8 | 8/8 | 8/8 |
-| **Total** | **68/73 = 93.2 %** | **78/80 = 97.5 %** | **71/72 = 98.6 %** |
+| Check | Round 6 | Round 7 | Round 8 | Round 9 |
+|---|---|---|---|---|
+| archives | 1/1 | 8/8 | 3/3 | 5/5 |
+| checksums | 8/8 | 8/8 | 8/8 | 8/8 |
+| encoding | 8/8 | 8/8 | 5/5 | 5/5 |
+| formats | 8/8 | 8/8 | 8/8 | 7/7 |
+| license | 7/8 | 8/8 | 7/8 | 7/7 |
+| metadata | 8/8 | 7/8 | 8/8 | 8/8 |
+| naming | 8/8 | 8/8 | 8/8 | 7/7 |
+| readme | **6/8** | 8/8 | 8/8 | 7/7 |
+| sensitive (PII) | **6/8** | 7/8 | 8/8 | 8/8 |
+| size | 8/8 | 8/8 | 8/8 | 8/8 |
+| **Total** | **68/73 = 93.2 %** | **78/80 = 97.5 %** | **71/72 = 98.6 %** | **70/70 = 100 %** |
 
-Round 8 has 5 encoding findings because the sample takes at most 8 per check and only 5 distinct
-encoding findings came up.
+Rounds 8 and 9 have 5 encoding findings because the sample takes at most 8 per check and only 5 distinct
+encoding findings came up. In round 9, osf r7u23 arrived only partly (an empty folder, no README) because
+the download was cut off, so its 4 sampled findings are excluded rather than judged; against that partial
+input they are accurate. Four more listed datasets (osf 7vfx8, figshare 27040849, 34408851, 34804398) did
+not download and were not run.
 
 ### Round 6 errors ([`eval/precision_round6_untouched.csv`](eval/precision_round6_untouched.csv), verdicts `e0beda0`)
 
@@ -513,6 +518,46 @@ mentions "email addresses" was flagged as an email column.
 | # | Wrong output | Dataset | Root cause | Status |
 |---|---|---|---|---|
 | 26 | "No license stated" (Dryad: CC0 applies) | zenodo 7702380 | README states CC0 1.0 under a list bullet `* License:`; the licence-section pattern allows `#` or `**`, not `* ` | **Not fixed**, so `d55f7df` stays frozen for a possible next round. It is a miss, not an overstatement; the Dryad outcome (CC0) is the same |
+
+### Round 9 ([`eval/precision_round9_untouched.csv`](eval/precision_round9_untouched.csv), verdicts `97b2388`)
+
+No errors among the 70 judged findings. Notable correct results: Olympic athletes' names and a `DOB`
+column flagged (public people, but still personal identifiers); five non-UTF-8 files, including
+`µg` units in a French aerosol file and a German codebook with „quotes“; 43 and 18 `__MACOSX`/`.DS_Store`
+entries inside zips; Word and RTF READMEs found, with the Word file reported as not readable.
+
+<details><summary>Round 9 datasets (<a href="eval/heldout8.json">eval/heldout8.json</a>)</summary>
+
+| Dataset | Why chosen |
+|---|---|
+| [zenodo 4995098](https://zenodo.org/records/4995098) | German/English medical-school survey; README txt files not UTF-8 |
+| [zenodo 20982926](https://zenodo.org/records/20982926) | Spanish UEQ questionnaire CSV, not UTF-8 |
+| [zenodo 19390301](https://zenodo.org/records/19390301) | French renovation survey CSV + dictionary, not UTF-8; docx + xlsx metadata |
+| [zenodo 13318298](https://zenodo.org/records/13318298) | French aerosol CSV, not UTF-8; Readme.docx |
+| [zenodo 14905174](https://zenodo.org/records/14905174) | German citizen-science codebook CSV, not UTF-8 |
+| [zenodo 3977957](https://zenodo.org/records/3977957) | Olympic athletes CSVs with names and birth dates |
+| [zenodo 13379011](https://zenodo.org/records/13379011) | Ship carbonate data with coordinates |
+| [zenodo 14637409](https://zenodo.org/records/14637409) | Text corpus CSVs with 'SSN'-like column |
+| [zenodo 23917022](https://zenodo.org/records/23917022) | Dyslexia prevalence in schoolchildren, xlsx |
+| [zenodo 4978521](https://zenodo.org/records/4978521) | README .rtf + zip |
+| [zenodo 4941350](https://zenodo.org/records/4941350) | README .rtf + zip |
+| [zenodo 4938365](https://zenodo.org/records/4938365) | README.txt + CSVs with spaces in names |
+| [zenodo 21850685](https://zenodo.org/records/21850685) | README.docx + CSV + PDFs |
+| [zenodo 21474065](https://zenodo.org/records/21474065) | README.docx + xlsx |
+| [zenodo 18217417](https://zenodo.org/records/18217417) | Readme.docx + notebook |
+| [zenodo 4975779](https://zenodo.org/records/4975779) | Many CSVs + R, no README |
+| [zenodo 23917732](https://zenodo.org/records/23917732) | Single LCA xlsx |
+| [zenodo 23916346](https://zenodo.org/records/23916346) | Cyrillic file name xlsx |
+| [zenodo 6321575](https://zenodo.org/records/6321575) | Figure CSVs + xlsx, no README |
+| [osf ruaf2](https://osf.io/ruaf2) | Clinical MRI raw xlsx |
+| [osf f74rc](https://osf.io/f74rc) | DATA-DICTIONARY.md + CSV + report |
+| [osf r7u23](https://osf.io/r7u23) | README.md + nested folders (partial download (folder skeleton only); its sampled findings excluded) |
+| [osf 7vfx8](https://osf.io/7vfx8) | xlsx + prompt txt (not run: download did not complete) |
+| [figshare 27040849](https://figshare.com/articles/dataset/27040849) | Anonymised clinical CSVs (not run: download did not complete) |
+| [figshare 34408851](https://figshare.com/articles/dataset/34408851) | data_dictionary.csv + netCDF + CSVs (not run: download did not complete) |
+| [figshare 34804398](https://figshare.com/articles/dataset/34804398) | GeoTIFF/gpkg + CSVs (not run: download did not complete) |
+
+</details>
 
 <details><summary>Round 6 datasets (<a href="eval/heldout5.json">eval/heldout5.json</a>)</summary>
 
