@@ -23,7 +23,7 @@ Rounds 1–2 were measured on the set used while fixing, so they are not indepen
 | 3 | Held-out run on 20+ real inputs, zero crashes | **Met.** 108 datasets in four sets (Zenodo, Dryad-curated, Figshare, Dataverse, OSF), 0 crashes. All 108 re-run on the final code: 216 runs, 0 crashes |
 | 4 | Hand-checked precision ≥ 90 % overall, no check type < 80 % | **Met on the round-5 untouched sample: 70/73 = 95.9 %, lowest check 87.5 %** (encoding, metadata, readme 7/8). Rounds 3 and 4 missed the per-check floor; see [§4c](#4c-untouched-rounds-4-and-5) |
 | 5 | Never invents or overstates | **Met after fixes.** 9 overstated or invented outputs found in rounds 1–2, plus a CC BY-SA license reported as CC0 (round 4) and a paper title offered as the abstract (round 5); all fixed |
-| 6 | CI green on GitHub, repo private | **Met.** Run 41562437197 on `d12da53`: 4/4 jobs green; repo `PRIVATE` |
+| 6 | CI green on GitHub, repo private | **Met.** Run 41574219591 on `aad0e98`: 4/4 jobs green; repo `PRIVATE` |
 | 7 | This file | Done |
 
 ## 1. Robustness
