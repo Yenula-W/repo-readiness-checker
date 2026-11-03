@@ -31,7 +31,7 @@ Rounds 1–2 were measured on the set used while fixing, so they are not indepen
 | 3 | Held-out run on 20+ real inputs, zero crashes | **Met.** 208 datasets in seven sets (Zenodo, Dryad-curated, Figshare, Dataverse, OSF), 0 crashes. All 208 re-run on the final code `d55f7df`, with and without metadata: 416 runs, 0 crashes |
 | 4 | Hand-checked precision ≥ 90 % overall, no check type < 80 % | **Met on the round-8 untouched sample: 71/72 = 98.6 %, lowest check 87.5 %** (license 7/8). Also met in rounds 5 and 7; rounds 3, 4 and 6 missed the per-check floor; see [§4c](#4c-untouched-rounds-4-and-5) and [§4d](#4d-ship-bar-rounds-6-8) |
 | 5 | Never invents or overstates | **Met after fixes; 0 in round 8.** 9 overstated or invented outputs found in rounds 1–2, one each in rounds 4 and 5, two each in rounds 6 and 7 (§4d); all fixed |
-| 6 | CI green on GitHub, repo private | **Met.** Run 41574219591 on `aad0e98`: 4/4 jobs green; repo `PRIVATE` |
+| 6 | CI green on GitHub, repo private | **Met.** Run 41640162671 on `b5256a8`: 4/4 jobs green (also green on `c53a00d`, `d55f7df`, `1bea570`); repo `PRIVATE` |
 | 7 | This file | Done |
 
 | Ship bar item | Status |
@@ -40,7 +40,7 @@ Rounds 1–2 were measured on the set used while fixing, so they are not indepen
 | 2. No code change between those rounds | Round 8 ran on `d55f7df`; no code has changed since |
 | 3. Clean install on the final commit, Python 3.9 / 3.12 / 3.13, README quickstart verbatim | **Met** on `1bea570` (macOS, fresh venvs; [§2](#2-install-from-github)) |
 | 4. Tests pass with and without optional extras | **Met.** Without `openpyxl`: 100 passed, 3 skipped; with it: 103 passed (each Python version) |
-| 5. CI green, repo private, every round recorded | See [§6](#6-ci); rounds 3–8 are in §4b–§4d |
+| 5. CI green, repo private, every round recorded | **Met.** Run 41640162671 on `b5256a8` green on 4/4 jobs; repo `PRIVATE`; rounds 3–8 are in §4b–§4d |
 | Cap | 3 rounds used (6, 7, 8). No check type failed in the last round, so none is made opt-in |
 
 ## 1. Robustness
