@@ -1,47 +1,47 @@
 # Evaluation: data-ready against the adoption-ready and ship bars
 
-Evaluated 2026-11-02/03 on commit `cdb3a4b` and later. Every item of `ADOPTION_BAR.md` and
-`SHIP_BAR.md` is listed below, with numbers. An item that is not fully met says so.
+Evaluated 2026-11-02/03 on commit `6e3b55e` and later. Every item of `docs/ADOPTION_BAR.md` and
+`docs/SHIP_BAR.md` is listed below, with numbers. An item that is not fully met says so.
 
-**Ship bar: met on `d55f7df`.** Rounds 8 and 9 are two untouched rounds in a row that pass, with no
-code change between them (`d55f7df` to `97b2388` changed only docs and eval files). Rounds 6 and 7
+**Ship bar: met on `4f5658a`.** Rounds 8 and 9 are two untouched rounds in a row that pass, with no
+code change between them (`4f5658a` to `101f842` changed only docs and eval files). Rounds 6 and 7
 failed and were fixed ([§4d](#4d-ship-bar-rounds-6-9)). Round 5 does not count: its errors were fixed
 afterwards.
 
-**Latest untouched precision (round 9, code `d55f7df`): 70/70 = 100 %, 0 crashes, 0 overstated
+**Latest untouched precision (round 9, code `4f5658a`): 70/70 = 100 %, 0 crashes, 0 overstated
 claims.** Round 8 on the same code: 71/72 = 98.6 %. Round 8's one error (a licence named in a
 `* License:` README bullet, a miss) is recorded but not fixed, to keep the code frozen.
 
 | Untouched round | Datasets | Findings judged | Overall | Checks below 80 % | Overstated | Code |
 |---|---|---|---|---|---|---|
-| 3 | 20 | 60 | 91.7 % | encoding, readme, PII | — | `f2d4e97` |
-| 4 | 31 | 72 | 93.1 % | license (5/8) | 1 | `a035550` |
-| 5 | 31 | 73 | 95.9 % | none | 1 | `c6a59a2` |
-| 6 | 38 | 73 | 93.2 % | readme, PII (6/8 each) | 2 | `aad0e98` (HEAD `71ef979`) |
-| 7 | 34 | 80 | 97.5 % | none | **2** | `c53a00d` |
-| **8** | **28** | **72** | **98.6 %** | **none** | **0** | **`d55f7df`** |
-| **9** | **22** | **70** | **100 %** | **none** | **0** | **`d55f7df`** |
+| 3 | 20 | 60 | 91.7 % | encoding, readme, PII | — | `1d17c30` |
+| 4 | 31 | 72 | 93.1 % | license (5/8) | 1 | `de775b6` |
+| 5 | 31 | 73 | 95.9 % | none | 1 | `8628da9` |
+| 6 | 38 | 73 | 93.2 % | readme, PII (6/8 each) | 2 | `46cfab6` (HEAD `46c6ce7`) |
+| 7 | 34 | 80 | 97.5 % | none | **2** | `8c4d7a0` |
+| **8** | **28** | **72** | **98.6 %** | **none** | **0** | **`4f5658a`** |
+| **9** | **22** | **70** | **100 %** | **none** | **0** | **`4f5658a`** |
 
 Each round's errors were fixed (with regression tests) only after its verdicts were committed.
 Rounds 1–2 were measured on the set used while fixing, so they are not independent.
 
 | # | Bar item | Status |
 |---|---|---|
-| 1 | Never crashes on messy input | **Met.** 17 robustness tests; 3 crash/hang classes found and fixed; 0 crashes in any held-out run (460 on the final code `d55f7df`) |
+| 1 | Never crashes on messy input | **Met.** 17 robustness tests; 3 crash/hang classes found and fixed; 0 crashes in any held-out run (460 on the final code `4f5658a`) |
 | 2 | Clean install from GitHub on 3.9 / 3.12 / 3.13, README quickstart verbatim | **Met** (macOS, fresh venvs) |
-| 3 | Held-out run on 20+ real inputs, zero crashes | **Met.** 230 datasets in eight sets (Zenodo, Dryad-curated, Figshare, Dataverse, OSF), 0 crashes. All 230 run on the final code `d55f7df`, with and without metadata: 460 runs, 0 crashes |
+| 3 | Held-out run on 20+ real inputs, zero crashes | **Met.** 230 datasets in eight sets (Zenodo, Dryad-curated, Figshare, Dataverse, OSF), 0 crashes. All 230 run on the final code `4f5658a`, with and without metadata: 460 runs, 0 crashes |
 | 4 | Hand-checked precision ≥ 90 % overall, no check type < 80 % | **Met on the round-9 untouched sample: 70/70 = 100 %**, and on round 8 (71/72 = 98.6 %, lowest check license 7/8). Also met in rounds 5 and 7; rounds 3, 4 and 6 missed the per-check floor; see [§4c](#4c-untouched-rounds-4-and-5) and [§4d](#4d-ship-bar-rounds-6-9) |
 | 5 | Never invents or overstates | **Met after fixes; 0 in round 8.** 9 overstated or invented outputs found in rounds 1–2, one each in rounds 4 and 5, two each in rounds 6 and 7 (§4d); all fixed; none in rounds 8 and 9 |
-| 6 | CI green on GitHub, repo private | **Met.** Run 41640162671 on `b5256a8`: 4/4 jobs green (also green on `c53a00d`, `d55f7df`, `1bea570`); repo `PRIVATE` |
+| 6 | CI green on GitHub, repo private | **Met.** Run 41640162671 on `6be465e`: 4/4 jobs green (also green on `8c4d7a0`, `4f5658a`, `eb5f41a`); repo `PRIVATE` |
 | 7 | This file | Done |
 
 | Ship bar item | Status |
 |---|---|
 | 1. Two untouched rounds in a row pass (≥ 90 %, no check < 80 %, 0 crashes, 0 overstated) | **Met.** Round 8 (98.6 %) and round 9 (100 %), 0 crashes, 0 overstated. Rounds 6 and 7 failed first |
-| 2. No code change between those rounds | **Met.** Both ran on `d55f7df`; `git diff d55f7df 97b2388 -- src pyproject.toml` is empty |
-| 3. Clean install on the final commit, Python 3.9 / 3.12 / 3.13, README quickstart verbatim | **Met** on `1bea570` (macOS, fresh venvs; [§2](#2-install-from-github)) |
+| 2. No code change between those rounds | **Met.** Both ran on `4f5658a`; `git diff d55f7df 97b2388 -- src pyproject.toml` is empty |
+| 3. Clean install on the final commit, Python 3.9 / 3.12 / 3.13, README quickstart verbatim | **Met** on `eb5f41a` (macOS, fresh venvs; [§2](#2-install-from-github)) |
 | 4. Tests pass with and without optional extras | **Met.** Without `openpyxl`: 100 passed, 3 skipped; with it: 103 passed (each Python version) |
-| 5. CI green, repo private, every round recorded | **Met.** Run 41640162671 on `b5256a8` green on 4/4 jobs; repo `PRIVATE`; rounds 3–9 are in §4b–§4d |
+| 5. CI green, repo private, every round recorded | **Met.** Run 41640162671 on `6be465e` green on 4/4 jobs; repo `PRIVATE`; rounds 3–9 are in §4b–§4d |
 | Cap | Rounds 6–8 were the three allowed; round 9 was run at the parent session's request, with no code change. No check type is made opt-in |
 
 ## 1. Robustness
@@ -83,7 +83,7 @@ creates a demo folder, runs two checks and lists the targets.
 | 3.12.15 (uv) | OK |
 | 3.13.16 (uv) | OK |
 
-Repeated on `1bea570` (final code `d55f7df`) for the ship bar, same three interpreters: the quickstart
+Repeated on `eb5f41a` (final code `4f5658a`) for the ship bar, same three interpreters: the quickstart
 ran verbatim in each. A clone of that commit was also installed twice per version:
 
 | Python | Without `openpyxl` | With `[excel]` |
@@ -220,10 +220,10 @@ before. The selection included non-UTF-8 text: GBK, Mac Roman and UTF-16. Five O
 also listed, but OSF's API returned HTTP 502/503 for over 12 minutes on 2026-11-03, so they could
 not be fetched and are not included.
 
-The code was frozen at commit `f2d4e97`. It was run with and without the Zenodo records as
+The code was frozen at commit `1d17c30`. It was run with and without the Zenodo records as
 metadata, and a new seeded sample was drawn (`--per-check 7 --seed=20261104`, 60 findings).
 Every finding was judged before anything was changed, and the verdicts were committed in
-`6bb924e` ([`eval/precision_round3_untouched.csv`](eval/precision_round3_untouched.csv)).
+`5b34dad` ([`eval/precision_round3_untouched.csv`](eval/precision_round3_untouched.csv)).
 
 **Crashes:** 0 in 40 runs (20 datasets, each with and without metadata). The datasets total 72 files
 and 59 MB; the median runtime was 0.38 s and the maximum 8.15 s. The 26 earlier datasets were
@@ -306,7 +306,7 @@ reachable again and is included.
 
 ### Round 4 ([`eval/heldout3.json`](eval/heldout3.json))
 
-Code `a035550`, seed 20261105, verdicts committed in `9fd2786`
+Code `de775b6`, seed 20261105, verdicts committed in `831ecb2`
 ([`eval/precision_round4_untouched.csv`](eval/precision_round4_untouched.csv)).
 31 datasets: 21 Zenodo, 4 Figshare, 6 OSF; 136 files, 486 MB. **Crashes: 0 in 62 runs** (median 0.42 s,
 max 7.61 s). Three `.dta` files over 150 MB in osf pkvrj were not downloaded.
@@ -326,7 +326,7 @@ max 7.61 s). Three `.dta` files over 150 MB in osf pkvrj were not downloaded.
 
 The round-3 fixes held: encoding, README and PII were 8/8, 7/8 and 8/8. License missed the floor:
 
-| # | Wrong output | Dataset | Root cause → fix (`c6a59a2`) |
+| # | Wrong output | Dataset | Root cause → fix (`8628da9`) |
 |---|---|---|---|
 | 27, 30 | `license.txt` (CC BY-SA 4.0 legal code) reported as CC0, so Dryad "compatible" | osf hq3k2 | Every CC 4.0 legal code ends with a sentence about CC0. The license named **first** now wins; BY-NC-SA, BY-ND, BY-NC-ND and CC URLs added |
 | 29 | "No LICENSE file or license metadata found", but README.md has a `## Licence` section (CC0) and `datapackage.json` declares CC0 | zenodo 23070603 | A license in a README License/Licence section now counts; Frictionless `datapackage.json` is read as metadata |
@@ -376,7 +376,7 @@ answer; osf pkvrj has Prolific relay addresses (`<id>@email.prolific.com`) shift
 
 ### Round 5 ([`eval/heldout4.json`](eval/heldout4.json)) — headline
 
-Code `c6a59a2` (round-4 fixes), seed 20261106, verdicts committed in `57b4fe3`
+Code `8628da9` (round-4 fixes), seed 20261106, verdicts committed in `404b077`
 ([`eval/precision_round5_untouched.csv`](eval/precision_round5_untouched.csv)).
 31 datasets: 24 Zenodo, 2 Figshare, 5 OSF; 126 files, 95 MB. **Crashes: 0 in 62 runs** (median 0.41 s,
 max 2.83 s).
@@ -447,9 +447,9 @@ Each fix has a regression test ("round 4" and "round 5" in `tests/test_regressio
 
 ## 4d. Ship-bar rounds 6–9
 
-`SHIP_BAR.md` asks for two untouched rounds in a row that pass with no code change between them, at
+`docs/SHIP_BAR.md` asks for two untouched rounds in a row that pass with no code change between them, at
 most three more rounds. A round passes with ≥ 90 % overall, no check type below 80 %, 0 crashes and
-0 overstated claims. Round 5 cannot start the streak: its fixes (`aad0e98`) came after it.
+0 overstated claims. Round 5 cannot start the streak: its fixes (`46cfab6`) came after it.
 
 Protocol as in §4c: datasets never used before (none from rounds 1–5 or from development), code
 frozen, each dataset run with and without its Zenodo record as metadata, a seeded sample
@@ -463,10 +463,10 @@ is not.
 
 | Round | Code | Seed | Datasets (Zenodo / OSF / Figshare) | Runs | Crashes | Overall | Lowest check | Overstated | Result |
 |---|---|---|---|---|---|---|---|---|---|
-| 6 | `71ef979` (= `aad0e98` code) | 20261107 | 38 (29 / 5 / 4) | 76 | 0 | 68/73 = 93.2 % | readme 6/8, PII 6/8 | 2 | **fail** |
-| 7 | `c53a00d` | 20261108 | 34 (25 / 6 / 3) | 68 | 0 | 78/80 = 97.5 % | metadata 7/8, PII 7/8 | 2 | **fail** |
-| 8 | `d55f7df` | 20261109 | 28 (21 / 4 / 3) | 56 | 0 | 71/72 = 98.6 % | license 7/8 | 0 | **pass** |
-| 9 | `d55f7df` (HEAD `75a2b26`) | 20261110 | 22 (19 / 3 / 0) | 44 | 0 | 70/70 = 100 % | all 100 % | 0 | **pass** |
+| 6 | `46c6ce7` (= `46cfab6` code) | 20261107 | 38 (29 / 5 / 4) | 76 | 0 | 68/73 = 93.2 % | readme 6/8, PII 6/8 | 2 | **fail** |
+| 7 | `8c4d7a0` | 20261108 | 34 (25 / 6 / 3) | 68 | 0 | 78/80 = 97.5 % | metadata 7/8, PII 7/8 | 2 | **fail** |
+| 8 | `4f5658a` | 20261109 | 28 (21 / 4 / 3) | 56 | 0 | 71/72 = 98.6 % | license 7/8 | 0 | **pass** |
+| 9 | `4f5658a` (HEAD `365bccd`) | 20261110 | 22 (19 / 3 / 0) | 44 | 0 | 70/70 = 100 % | all 100 % | 0 | **pass** |
 
 Per check (correct / judged):
 
@@ -490,9 +490,9 @@ the download was cut off, so its 4 sampled findings are excluded rather than jud
 input they are accurate. Four more listed datasets (osf 7vfx8, figshare 27040849, 34408851, 34804398) did
 not download and were not run.
 
-### Round 6 errors ([`eval/precision_round6_untouched.csv`](eval/precision_round6_untouched.csv), verdicts `e0beda0`)
+### Round 6 errors ([`eval/precision_round6_untouched.csv`](eval/precision_round6_untouched.csv), verdicts `c559079`)
 
-| # | Wrong output | Dataset | Root cause, then fix (`c53a00d`) |
+| # | Wrong output | Dataset | Root cause, then fix (`8c4d7a0`) |
 |---|---|---|---|
 | 29 | GPL-3.0 `LICENSE` "not recognised" | zenodo 4449681 | Only CC, MIT, Apache and ODbL texts were known. Added GPL-2/3, LGPL-3, AGPL-3, MPL-2.0, BSD-2/3-Clause, Unlicense |
 | 52 | "332 column(s) not defined" | zenodo 21820838 | The `*_legend.csv` that defines every code was not read as a dictionary, and headers are `Q1. question text`. `legend` now marks a dictionary, and a coded header counts as described when its code or its question is in the docs |
@@ -500,9 +500,9 @@ not download and were not run.
 | 60 | **Overstated:** "No obvious personal identifiers" | zenodo 10463074 | `Q4_BIRTH_YEAR`, `Q5_POSTCODE`, `RESPONDENT_IP_ADDRESS` were missed by fully anchored patterns. Identifiers behind a question code or a person word now match |
 | 65 | **Overstated:** births per postcode flagged, postcode called "street address" | zenodo 23122187 | Postcode, birth year and coordinates are now *indirect* identifiers, flagged only next to another identifier; a postcode is labelled as one |
 
-### Round 7 errors ([`eval/precision_round7_untouched.csv`](eval/precision_round7_untouched.csv), verdicts `5f4c27f`)
+### Round 7 errors ([`eval/precision_round7_untouched.csv`](eval/precision_round7_untouched.csv), verdicts `b4ba6ac`)
 
-| # | Wrong output | Dataset | Root cause, then fix (`d55f7df`) |
+| # | Wrong output | Dataset | Root cause, then fix (`4f5658a`) |
 |---|---|---|---|
 | 47 | **Overstated:** "Methods present" | zenodo 5023989 | Zenodo `notes` (usage notes, citations) were read as methods. No longer |
 | 69 | **Overstated:** `Email` column flagged as PII (Dryad FAIL) | zenodo 11581466 | Every value is `anonymous` (MS Forms). Placeholder-only columns are skipped, and an email-named column with no `@` in any value is not treated as email |
@@ -513,13 +513,13 @@ keyword fixes never reached those targets. A redefined topic now keeps the commo
 The same fix removed a latent false positive in osf r37t5: a sentence-long caption header that
 mentions "email addresses" was flagged as an email column.
 
-### Round 8 error ([`eval/precision_round8_untouched.csv`](eval/precision_round8_untouched.csv), verdicts `1bea570`)
+### Round 8 error ([`eval/precision_round8_untouched.csv`](eval/precision_round8_untouched.csv), verdicts `eb5f41a`)
 
 | # | Wrong output | Dataset | Root cause | Status |
 |---|---|---|---|---|
-| 26 | "No license stated" (Dryad: CC0 applies) | zenodo 7702380 | README states CC0 1.0 under a list bullet `* License:`; the licence-section pattern allows `#` or `**`, not `* ` | **Not fixed**, so `d55f7df` stays frozen for a possible next round. It is a miss, not an overstatement; the Dryad outcome (CC0) is the same |
+| 26 | "No license stated" (Dryad: CC0 applies) | zenodo 7702380 | README states CC0 1.0 under a list bullet `* License:`; the licence-section pattern allows `#` or `**`, not `* ` | **Not fixed**, so `4f5658a` stays frozen for a possible next round. It is a miss, not an overstatement; the Dryad outcome (CC0) is the same |
 
-### Round 9 ([`eval/precision_round9_untouched.csv`](eval/precision_round9_untouched.csv), verdicts `97b2388`)
+### Round 9 ([`eval/precision_round9_untouched.csv`](eval/precision_round9_untouched.csv), verdicts `101f842`)
 
 No errors among the 70 judged findings. Notable correct results: Olympic athletes' names and a `DOB`
 column flagged (public people, but still personal identifiers); five non-UTF-8 files, including
