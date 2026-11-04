@@ -729,3 +729,5 @@ reports `PRIVATE`).
   Dryad's live upload limits and Figshare institutional instances may differ.
 
 Added after the ship-bar rounds (2026-11-03): the summary now explains what "not provided" means. It is an output message only, and no check or rule changed.
+
+Added after the ship-bar rounds (2026-11-03): files are read and written as UTF-8 and console output no longer fails on Windows code pages. No check or rule changed.
