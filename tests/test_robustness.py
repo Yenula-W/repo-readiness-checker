@@ -103,6 +103,7 @@ def test_zip_contents_are_reported(tmp_path):
     assert any("were not checked" in t for t in titles)
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="Windows writes sparse files out in full")
 def test_huge_sparse_files(tmp_path):
     root = tmp_path / "ds"
     root.mkdir()
