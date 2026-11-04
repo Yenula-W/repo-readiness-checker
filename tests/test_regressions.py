@@ -24,13 +24,13 @@ def test_rtf_readme_smart_quotes_do_not_hide_file_names(tmp_path):
     # zenodo 4095406: \'91Characteristics_field.csv\'92 was not seen as a mention.
     (tmp_path / "Readme_x.rtf").write_text(
         r"{\rtf1\ansi Datafile \'91Characteristics_field.csv\'92, file containing variables in units of cm.\par}")
-    (tmp_path / "Characteristics_field.csv").write_text("a\n1\n")
+    (tmp_path / "Characteristics_field.csv").write_text("a\n1\n", encoding="utf-8")
     f = run(tmp_path)
     assert not any("not mentioned" in x.title for x in f)
 
 
 def test_folder_named_in_prose_covers_its_files(tmp_path):
-    (tmp_path / "README.md").write_text("# T\n\nFolder 'Photos_field' holds 15 images.\n")
+    (tmp_path / "README.md").write_text("# T\n\nFolder 'Photos_field' holds 15 images.\n", encoding="utf-8")
     (tmp_path / "Photos_field").mkdir()
     (tmp_path / "Photos_field" / "a.png").write_bytes(b"\x89PNG")
     assert not any("not mentioned" in x.title for x in run(tmp_path))
@@ -39,25 +39,25 @@ def test_folder_named_in_prose_covers_its_files(tmp_path):
 def test_species_name_column_is_not_pii(tmp_path):
     # zenodo 4988910: column "Name" holds species codes like "G.pan".
     rows = "\n".join(f"{c},alien" for c in ["G.pan", "D.ten", "L.het", "Achillea millefolium"])
-    (tmp_path / "plants.csv").write_text("Name,Origin\n" + rows + "\n")
+    (tmp_path / "plants.csv").write_text("Name,Origin\n" + rows + "\n", encoding="utf-8")
     assert [x.status for x in by_check(run(tmp_path, "dryad"), "sensitive")] == ["pass"]
 
 
 def test_name_column_with_people_is_pii(tmp_path):
     rows = "\n".join(["Ada Lovelace,1", "Alan Turing,2", "Grace Hopper,3", "Lovelace, Ada,4"])
-    (tmp_path / "people.csv").write_text("Name,score\n" + rows + "\n")
+    (tmp_path / "people.csv").write_text("Name,score\n" + rows + "\n", encoding="utf-8")
     assert any(x.status == "fail" for x in by_check(run(tmp_path, "dryad"), "sensitive"))
 
 
 def test_birthdate_in_mortality_data_is_flagged(tmp_path):
     # dataverse DVN/DHDNIC: a true positive that must stay.
-    (tmp_path / "m.csv").write_text("uniqueid,gender,birthdate,deathdate\n4823,Female,15-Aug-21,15-Aug-21\n")
+    (tmp_path / "m.csv").write_text("uniqueid,gender,birthdate,deathdate\n4823,Female,15-Aug-21,15-Aug-21\n", encoding="utf-8")
     assert any("date of birth" in x.detail for x in by_check(run(tmp_path), "sensitive"))
 
 
 def test_dryad_without_license_is_info_not_pass(tmp_path):
     # Every held-out dataset without a license got "License compatible with CC0" (overstated).
-    (tmp_path / "a.csv").write_text("a\n1\n")
+    (tmp_path / "a.csv").write_text("a\n1\n", encoding="utf-8")
     lic = by_check(run(tmp_path, "dryad"), "license")
     assert [x.status for x in lic] == ["info"] and "No license stated" in lic[0].title
 
@@ -71,8 +71,8 @@ def test_rar_is_discouraged_everywhere_and_rejected_by_dryad(tmp_path):
 
 def test_readme_under_another_name_is_recognised(tmp_path):
     # zenodo 4771158 (Yamada_and_Wada_(2021).txt) and zenodo 5812145 (FileDescription.docx).
-    (tmp_path / "Yamada_and_Wada_(2021).txt").write_text("Explanation for the variables:\n Release day ...")
-    (tmp_path / "Field_Survey.csv").write_text("Release day\n1\n")
+    (tmp_path / "Yamada_and_Wada_(2021).txt").write_text("Explanation for the variables:\n Release day ...", encoding="utf-8")
+    (tmp_path / "Field_Survey.csv").write_text("Release day\n1\n", encoding="utf-8")
     f = run(tmp_path)
     r = by_check(f, "readme")[0]
     assert r.status == "warn" and "looks like one" in r.title
@@ -89,8 +89,8 @@ def test_file_description_docx_is_readme_like(tmp_path):
 
 def test_metadata_csv_counts_as_data_dictionary(tmp_path):
     # zenodo 7717258: Metadata_for_publication_2023.csv defines every column.
-    (tmp_path / "README.md").write_text("# T\n\nData_for_publication_2023.csv and Metadata_for_publication_2023.csv.\n")
-    (tmp_path / "Data_for_publication_2023.csv").write_text("lot.id,site.name\n1,a\n")
+    (tmp_path / "README.md").write_text("# T\n\nData_for_publication_2023.csv and Metadata_for_publication_2023.csv.\n", encoding="utf-8")
+    (tmp_path / "Data_for_publication_2023.csv").write_text("lot.id,site.name\n1,a\n", encoding="utf-8")
     (tmp_path / "Metadata_for_publication_2023.csv").write_text(
         "Establishment by seed source,.\n,\nVariable name,description\nlot.id,an ID\nsite.name,Site name\n")
     assert not any("column(s) not defined" in x.title for x in run(tmp_path))
@@ -141,7 +141,7 @@ def test_nih_award_recognised():
 
 
 def test_license_file_disagreeing_with_metadata(tmp_path):
-    (tmp_path / "LICENSE").write_text("MIT License\nPermission is hereby granted, free of charge")
+    (tmp_path / "LICENSE").write_text("MIT License\nPermission is hereby granted, free of charge", encoding="utf-8")
     f = run(tmp_path, "zenodo", metadata={"license": "CC-BY-4.0"})
     lic = [x for x in f if x.check == "license"]
     assert len(lic) == 1 and lic[0].status == "warn" and "MIT" in lic[0].title
@@ -160,7 +160,7 @@ def test_draft_does_not_assume_open_access():
 
 def test_zenodo_cc_zero_is_cc0_for_dryad(tmp_path):
     # zenodo 7717258 / 4988910: Zenodo's id "cc-zero" was rejected as "not CC0".
-    (tmp_path / "a.csv").write_text("a\n1\n")
+    (tmp_path / "a.csv").write_text("a\n1\n", encoding="utf-8")
     for lic in ("cc-zero", "CC0-1.0", "cc0", "Creative Commons Zero v1.0 Universal"):
         f = [x for x in run(tmp_path, "dryad", metadata={"license": lic}) if x.check == "license"]
         assert f[0].status == "pass", lic
@@ -177,7 +177,7 @@ def test_no_pii_pass_when_nothing_was_inspected(tmp_path):
 
 def test_missing_checksum_manifest_is_optional_info(tmp_path):
     # Every held-out dataset got a WARN, but no supported repository requires a manifest.
-    (tmp_path / "a.csv").write_text("a\n1\n")
+    (tmp_path / "a.csv").write_text("a\n1\n", encoding="utf-8")
     c = [x for x in run(tmp_path) if x.check == "checksums"]
     assert c[0].status == "info" and "optional" in c[0].title
 
@@ -204,7 +204,7 @@ def test_markdown_escaped_names_are_matched(tmp_path):
     # zenodo 8437097: README.md writes me\_biomass\_for\_repository.csv and Veg\_type.
     (tmp_path / "README.md").write_text(
         "# T\n\nThe data are in me\\_biomass\\_for\\_repository.csv.\n\n1. Veg\\_type is the community; KgDM\\_Ha in kg.\n")
-    (tmp_path / "me_biomass_for_repository.csv").write_text("Veg_type,KgDM_Ha\na,1\n")
+    (tmp_path / "me_biomass_for_repository.csv").write_text("Veg_type,KgDM_Ha\na,1\n", encoding="utf-8")
     f = run(tmp_path)
     assert not any("not mentioned" in x.title or "column(s) not defined" in x.title for x in f)
 
@@ -231,14 +231,14 @@ def test_utf16_detail_is_accurate(tmp_path):
 
 def test_masked_ip_values_are_described(tmp_path):
     # figshare 34874547: 'IP' column holds 10.20.*.* style masked addresses.
-    (tmp_path / "raw.csv").write_text("id,IP\n1,10.20.*.*\n2,10.30.*.*\n")
+    (tmp_path / "raw.csv").write_text("id,IP\n1,10.20.*.*\n2,10.30.*.*\n", encoding="utf-8")
     s = [x for x in run(tmp_path) if x.check == "sensitive" and "PII" in x.title][0]
     assert "partly masked" in s.detail and "10.20.*.*" in s.detail
 
 
 def test_email_in_free_text_answer_is_flagged(tmp_path):
     # zenodo 10803768: a respondent left a personal email in a free-text survey answer (true positive).
-    (tmp_path / "data_anon.csv").write_text("id,QPERS_COMPLAIN\n1,Contact me: someone@example.org\n2,nee\n")
+    (tmp_path / "data_anon.csv").write_text("id,QPERS_COMPLAIN\n1,Contact me: someone@example.org\n2,nee\n", encoding="utf-8")
     assert any(x.status == "fail" for x in run(tmp_path, "dryad") if x.check == "sensitive")
 
 
@@ -255,8 +255,8 @@ def test_non_english_readme_names(tmp_path):
     for n in ("LEESMIJ.md", "LIESMICH.txt", "lisezmoi.md", "LÉAME.txt", "leia-me.md", "README.md"):
         assert README_RE.search(n), n
     assert not README_RE.search("thread_metrics.txt")
-    (tmp_path / "LEESMIJ.md").write_text("# Canonenquête\n\ndata_anon.csv bevat de antwoorden.\n")
-    (tmp_path / "data_anon.csv").write_text("id\n1\n")
+    (tmp_path / "LEESMIJ.md").write_text("# Canonenquête\n\ndata_anon.csv bevat de antwoorden.\n", encoding="utf-8")
+    (tmp_path / "data_anon.csv").write_text("id\n1\n", encoding="utf-8")
     assert [x for x in run(tmp_path) if x.check == "readme"][0].title == "README found: LEESMIJ.md"
 
 
@@ -276,7 +276,7 @@ def test_license_named_in_readme_licence_section(tmp_path):
     from data_ready.cli import _infer
     (tmp_path / "README.md").write_text("# Interviews\n\nSome text about drains.\n\n## Licence\n\n"
                                         "Released under [CC0 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/).\n")
-    (tmp_path / "data.csv").write_text("a\n1\n")
+    (tmp_path / "data.csv").write_text("a\n1\n", encoding="utf-8")
     inf = _infer(tmp_path)
     assert inf["license"] == "CC0-1.0"
     ctx = Context(root=tmp_path, files=scan(tmp_path), rules=load_target("figshare"), metadata={},
@@ -308,13 +308,13 @@ def test_missing_codes_described_without_the_word_missing(tmp_path):
     # zenodo 23506397: "empty = quantified; ND = not detected; - (not applicable)".
     (tmp_path / "README.md").write_text("# T\n\nFiles: a.csv. Columns: x (mg/kg).\n"
                                         "qualifier: empty = quantified; ND = not detected; - = not applicable\n")
-    (tmp_path / "a.csv").write_text("x\n1\n")
+    (tmp_path / "a.csv").write_text("x\n1\n", encoding="utf-8")
     assert not any("Missing data codes" in x.detail for x in by_check(run(tmp_path), "readme"))
 
 
 def test_nih_related_identifiers_label_does_not_claim_publications(tmp_path):
     # zenodo 6522672: the only related identifier is a cited dataset.
-    (tmp_path / "a.csv").write_text("x\n1\n")
+    (tmp_path / "a.csv").write_text("x\n1\n", encoding="utf-8")
     f = run(tmp_path, "nih-dms", {"related_identifiers": ["10.5281/zenodo.3950528"]})
     assert not any("Related publications" in x.title for x in f)
 
@@ -359,19 +359,19 @@ def test_excel_caption_row_is_not_the_header(tmp_path):
 
 def test_csv_title_row_is_not_the_header(tmp_path):
     # figshare 26798023: first line 'DatosGeneralesTotales;;;;' above the real header.
-    (tmp_path / "d.csv").write_text("DatosGeneralesTotales;;;\nID;Provincia;Sexo;Edad\n1;Madrid;M;30\n")
+    (tmp_path / "d.csv").write_text("DatosGeneralesTotales;;;\nID;Provincia;Sexo;Edad\n1;Madrid;M;30\n", encoding="utf-8")
     assert scan(tmp_path)[0].columns == ["ID", "Provincia", "Sexo", "Edad"]
 
 
 def test_single_column_csv_keeps_its_header(tmp_path):
-    (tmp_path / "d.csv").write_text("value\n1\n2\n")
+    (tmp_path / "d.csv").write_text("value\n1\n2\n", encoding="utf-8")
     assert scan(tmp_path)[0].columns == ["value"]
 
 
 def test_column_with_unit_suffix_matches_readme_name(tmp_path):
     # zenodo 23493423: README defines "Extract loading"; the column is "Extract loading (mg/g sample)".
-    (tmp_path / "README.md").write_text("# T\n\nFile d.csv. Extract loading: extract mass / sample mass.\n")
-    (tmp_path / "d.csv").write_text("Extract loading (mg/g sample)\n3.1\n")
+    (tmp_path / "README.md").write_text("# T\n\nFile d.csv. Extract loading: extract mass / sample mass.\n", encoding="utf-8")
+    (tmp_path / "d.csv").write_text("Extract loading (mg/g sample)\n3.1\n", encoding="utf-8")
     assert not any("not defined" in x.title for x in run(tmp_path))
 
 
@@ -389,9 +389,9 @@ def test_gpl3_license_text_is_recognised():
 
 def test_survey_legend_defines_coded_columns(tmp_path):
     # zenodo 21820838: columns 'Q1. question text'; a *_legend.csv lists code and question.
-    (tmp_path / "README.txt").write_text("Survey export. Files: results.csv, results_legend.csv.\n")
-    (tmp_path / "results_legend.csv").write_text("Code;Frage\nid;Antwort ID\nQ1;Wie alt sind Sie?\n")
-    (tmp_path / "results.csv").write_text("id. Antwort ID;Q1. Wie alt sind Sie?\n1;30\n")
+    (tmp_path / "README.txt").write_text("Survey export. Files: results.csv, results_legend.csv.\n", encoding="utf-8")
+    (tmp_path / "results_legend.csv").write_text("Code;Frage\nid;Antwort ID\nQ1;Wie alt sind Sie?\n", encoding="utf-8")
+    (tmp_path / "results.csv").write_text("id. Antwort ID;Q1. Wie alt sind Sie?\n1;30\n", encoding="utf-8")
     assert not any("not defined" in x.title for x in run(tmp_path))
 
 
@@ -399,7 +399,7 @@ def test_na_and_unit_symbols_count_as_readme_topics(tmp_path):
     # figshare 34741380: "Options include Male, Female, and Unknown/NA" and "mass ... (g)".
     (tmp_path / "README.txt").write_text("File d.csv. Folder structure: flat.\nColumns are defined:\n"
                                          "- sex: Male, Female, and Unknown/NA\n- mass: body mass (g)\n")
-    (tmp_path / "d.csv").write_text("sex,mass\nMale,3\n")
+    (tmp_path / "d.csv").write_text("sex,mass\nMale,3\n", encoding="utf-8")
     assert not any("missing" in x.title and "topic" in x.title for x in by_check(run(tmp_path), "readme"))
 
 
@@ -413,29 +413,29 @@ def test_file_s_is_not_a_unit():
 
 def test_prefixed_postcode_and_birth_year_are_flagged(tmp_path):
     # zenodo 10463074: Q4_BIRTH_YEAR, Q5_POSTCODE and RESPONDENT_IP_ADDRESS passed as "no identifiers".
-    (tmp_path / "raw.csv").write_text("ID;Q4_BIRTH_YEAR;Q5_POSTCODE\n1;1950;10115\n2;1980;20095\n")
+    (tmp_path / "raw.csv").write_text("ID;Q4_BIRTH_YEAR;Q5_POSTCODE\n1;1950;10115\n2;1980;20095\n", encoding="utf-8")
     s = [x for x in by_check(run(tmp_path), "sensitive") if "PII" in x.title][0]
     assert "Q5_POSTCODE" in s.detail and "Q4_BIRTH_YEAR" in s.detail
-    (tmp_path / "raw.csv").write_text("ID,RESPONDENT_IP_ADDRESS\n1,\n")
+    (tmp_path / "raw.csv").write_text("ID,RESPONDENT_IP_ADDRESS\n1,\n", encoding="utf-8")
     assert any("PII" in x.title for x in by_check(run(tmp_path), "sensitive"))
 
 
 def test_postcode_alone_in_aggregate_table_is_not_pii(tmp_path):
     # zenodo 23122187: births registered per postcode area.
-    (tmp_path / "data.csv").write_text('"postcode","births_registered"\n"4350",1529\n"4209",1283\n')
+    (tmp_path / "data.csv").write_text('"postcode","births_registered"\n"4350",1529\n"4209",1283\n', encoding="utf-8")
     s = by_check(run(tmp_path), "sensitive")
     assert not any("PII" in x.title for x in s) and any(x.status == "pass" for x in s)
 
 
 def test_postcode_is_not_called_a_street_address(tmp_path):
-    (tmp_path / "a.csv").write_text("street,postcode\nMain St 1,60327\n")
+    (tmp_path / "a.csv").write_text("street,postcode\nMain St 1,60327\n", encoding="utf-8")
     s = [x for x in by_check(run(tmp_path), "sensitive") if "PII" in x.title][0]
     assert "'postcode' looks like postcode" in s.detail
 
 
 def test_ambiguous_words_are_not_matched_after_a_prefix(tmp_path):
     # 'grid_cell' or 'q1_lat' must not count as a phone number / coordinates by prefix stripping.
-    (tmp_path / "a.csv").write_text("q1_cell,angle_sin,site_lat\n1,0.5,3\n")
+    (tmp_path / "a.csv").write_text("q1_cell,angle_sin,site_lat\n1,0.5,3\n", encoding="utf-8")
     assert not any("PII" in x.title for x in by_check(run(tmp_path), "sensitive"))
 
 
@@ -445,33 +445,33 @@ def test_zenodo_notes_are_not_methods(tmp_path):
     # zenodo 5023989: 'notes' held Dryad usage notes describing files, reported as "Methods present".
     from data_ready.metadata import load_metadata
     p = tmp_path / "record.json"
-    p.write_text(json.dumps({"metadata": {"title": "T", "notes": "jpeg-scans.zip: JPEGs of plate scans."}}))
+    p.write_text(json.dumps({"metadata": {"title": "T", "notes": "jpeg-scans.zip: JPEGs of plate scans."}}), encoding="utf-8")
     assert not load_metadata(p)[0].get("methods")
 
 
 def test_anonymous_email_column_is_not_pii(tmp_path):
     # zenodo 11581466: MS Forms export, 'Email' is 'anonymous' in every row and 'Name' is empty.
-    (tmp_path / "raw.csv").write_text("ID,Email,Name,Answer\n1,anonymous,,ok\n2,anonymous,,fine\n")
+    (tmp_path / "raw.csv").write_text("ID,Email,Name,Answer\n1,anonymous,,ok\n2,anonymous,,fine\n", encoding="utf-8")
     assert not any("PII" in x.title for x in by_check(run(tmp_path, "dryad"), "sensitive"))
 
 
 def test_email_column_without_addresses_is_not_pii(tmp_path):
-    (tmp_path / "raw.csv").write_text("id,email_consent\n1,yes\n2,no\n")
+    (tmp_path / "raw.csv").write_text("id,email_consent\n1,yes\n2,no\n", encoding="utf-8")
     assert not any("PII" in x.title for x in by_check(run(tmp_path), "sensitive"))
-    (tmp_path / "raw.csv").write_text("id,email\n1,a.person@uni.edu\n")
+    (tmp_path / "raw.csv").write_text("id,email\n1,a.person@uni.edu\n", encoding="utf-8")
     assert any("PII" in x.title for x in by_check(run(tmp_path), "sensitive"))
 
 
 def test_target_topics_keep_common_keywords(tmp_path):
     # dryad.yaml redefines the 'missing' topic; 'not applicable' from _common must still count.
-    (tmp_path / "README.md").write_text("# T\n\nFiles: a.csv. Columns: x (mg/kg). '-' means not applicable.\n")
-    (tmp_path / "a.csv").write_text("x\n1\n")
+    (tmp_path / "README.md").write_text("# T\n\nFiles: a.csv. Columns: x (mg/kg). '-' means not applicable.\n", encoding="utf-8")
+    (tmp_path / "a.csv").write_text("x\n1\n", encoding="utf-8")
     assert not any("Missing data codes" in x.detail for x in by_check(run(tmp_path, "dryad"), "readme"))
 
 
 def test_summary_explains_not_provided(tmp_path, capsys):
     # zenodo 18549093: a first run with no metadata file read as five unexplained FAILs.
     from data_ready.cli import main
-    (tmp_path / "a.csv").write_text("x\n1\n")
+    (tmp_path / "a.csv").write_text("x\n1\n", encoding="utf-8")
     main(["check", str(tmp_path), "--target", "zenodo", "--no-hash"])
     assert "fill these in on the deposit form" in capsys.readouterr().out

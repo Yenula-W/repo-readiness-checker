@@ -88,7 +88,7 @@ def test_checksums_verified_and_tamper_detected(tmp_path):
     root = tmp_path / "ds"
     shutil.copytree(GOOD, root)
     assert "pass" in statuses(run(root, "zenodo"), "checksums")
-    (root / "data" / "leaf_temp.csv").write_text("plant_id\nP99\n")
+    (root / "data" / "leaf_temp.csv").write_text("plant_id\nP99\n", encoding="utf-8")
     f = run(root, "zenodo")
     assert "fail" in statuses(f, "checksums")
 
@@ -118,23 +118,23 @@ def test_pii_is_warn_for_zenodo():
 
 
 def test_pii_value_detection_without_suspicious_header(tmp_path):
-    (tmp_path / "README.md").write_text("# x\n")
-    (tmp_path / "t.csv").write_text("id,contact\n1,a@b.org\n2,c@d.org\n")
+    (tmp_path / "README.md").write_text("# x\n", encoding="utf-8")
+    (tmp_path / "t.csv").write_text("id,contact\n1,a@b.org\n2,c@d.org\n", encoding="utf-8")
     f = run(tmp_path, "zenodo")
     assert "email" in next(x for x in f if x.check == "sensitive" and "PII" in x.title).detail
 
 
 def test_species_name_is_not_pii(tmp_path):
-    (tmp_path / "t.csv").write_text("species_name,file_name,gene_name\nA,b,c\n")
+    (tmp_path / "t.csv").write_text("species_name,file_name,gene_name\nA,b,c\n", encoding="utf-8")
     assert statuses(run(tmp_path, "zenodo"), "sensitive") == ["pass"]
 
 
 # --- README coverage --------------------------------------------------------------
 
 def test_undocumented_columns_and_files(tmp_path):
-    (tmp_path / "README.md").write_text("# T\n\nFiles: a.csv has column alpha in units of m. Missing = NA.\n")
-    (tmp_path / "a.csv").write_text("alpha,beta\n1,2\n")
-    (tmp_path / "b.csv").write_text("gamma\n3\n")
+    (tmp_path / "README.md").write_text("# T\n\nFiles: a.csv has column alpha in units of m. Missing = NA.\n", encoding="utf-8")
+    (tmp_path / "a.csv").write_text("alpha,beta\n1,2\n", encoding="utf-8")
+    (tmp_path / "b.csv").write_text("gamma\n3\n", encoding="utf-8")
     f = run(tmp_path, "zenodo")
     cols = next(x for x in f if "column(s) not defined" in x.title)
     assert "beta" in cols.detail and "gamma" in cols.detail and "alpha" not in cols.detail
@@ -143,7 +143,7 @@ def test_undocumented_columns_and_files(tmp_path):
 
 
 def test_folder_mention_covers_files_inside(tmp_path):
-    (tmp_path / "README.md").write_text("# T\n\nThe images/ folder holds raw microscope TIFFs.\n")
+    (tmp_path / "README.md").write_text("# T\n\nThe images/ folder holds raw microscope TIFFs.\n", encoding="utf-8")
     (tmp_path / "images").mkdir()
     for i in range(3):
         (tmp_path / "images" / f"img_{i}.tif").write_bytes(b"II*\x00")
@@ -152,7 +152,7 @@ def test_folder_mention_covers_files_inside(tmp_path):
 
 
 def test_dryad_requires_markdown_readme(tmp_path):
-    (tmp_path / "README.txt").write_text("summary of files and variables")
+    (tmp_path / "README.txt").write_text("summary of files and variables", encoding="utf-8")
     f = run(tmp_path, "dryad")
     assert any(x.status == "fail" and "README must be" in x.title for x in f)
 
@@ -174,7 +174,7 @@ def test_xlsx_with_csv_twin_not_flagged(tmp_path):
     openpyxl = pytest.importorskip("openpyxl")
     wb = openpyxl.Workbook()
     wb.save(tmp_path / "results.xlsx")
-    (tmp_path / "results.csv").write_text("a\n1\n")
+    (tmp_path / "results.csv").write_text("a\n1\n", encoding="utf-8")
     assert statuses(run(tmp_path, "zenodo"), "formats") == ["pass"]
 
 
@@ -190,7 +190,7 @@ def test_case_collision():
 
 def test_zenodo_file_count_limit(tmp_path):
     for i in range(101):
-        (tmp_path / f"f{i:03}.txt").write_text("x")
+        (tmp_path / f"f{i:03}.txt").write_text("x", encoding="utf-8")
     f = run(tmp_path, "zenodo")
     assert any(x.check == "size" and x.status == "fail" and "101 files" in x.title for x in f)
 
@@ -257,10 +257,10 @@ def test_cli_writes_reports_and_drafts(tmp_path, capsys):
     rc = main(["check", str(MESSY), "-t", "zenodo", "-t", "nih-dms", "--out", str(out),
                "--draft-metadata", "zenodo", "--draft-metadata", "datacite", "--strict"])
     assert rc == 1
-    rep = json.loads((out / "readiness-report.json").read_text())
+    rep = json.loads((out / "readiness-report.json").read_text(encoding="utf-8"))
     assert [t["id"] for t in rep["targets"]] == ["zenodo", "nih-dms"]
     assert rep["targets"][0]["status"] == "fail"
-    md = (out / "readiness-report.md").read_text()
+    md = (out / "readiness-report.md").read_text(encoding="utf-8")
     assert "Fix-it list" in md and "source" in md
     assert (out / ".zenodo.draft.json").exists() and (out / "datacite.draft.json").exists()
 
@@ -269,7 +269,7 @@ def test_cli_write_manifest(tmp_path):
     root = tmp_path / "ds"
     shutil.copytree(MESSY, root)
     main(["check", str(root), "-t", "zenodo", "--write-manifest"])
-    text = (root / "manifest-sha256.txt").read_text()
+    text = (root / "manifest-sha256.txt").read_text(encoding="utf-8")
     assert "analysis.mat" in text
     f = run(root, "zenodo")
     assert "pass" in statuses(f, "checksums")

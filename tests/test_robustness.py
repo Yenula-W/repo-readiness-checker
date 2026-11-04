@@ -1,4 +1,5 @@
 """data-ready must never crash on messy input. Each case runs the full CLI on all targets."""
+import sys
 import json
 import os
 import zipfile
@@ -37,7 +38,7 @@ def test_binary_and_nul_bytes_in_csv(tmp_path):
     (root / "random.csv").write_bytes(os.urandom(5000))
     (root / "nul.csv").write_bytes(b"a,b\x00,c\n1,2\x00,3\n")
     (root / "empty.csv").write_bytes(b"")
-    (root / "header_only.tsv").write_text("x\ty\n")
+    (root / "header_only.tsv").write_text("x\ty\n", encoding="utf-8")
     check(root, tmp_path)
 
 
@@ -71,7 +72,7 @@ def test_explicit_metadata_path_missing_fields(tmp_path):
     root = tmp_path / "ds"
     root.mkdir()
     md = tmp_path / "dataverse.json"
-    md.write_text(json.dumps({"status": "OK", "data": {"id": 1}}))
+    md.write_text(json.dumps({"status": "OK", "data": {"id": 1}}), encoding="utf-8")
     rep = check(root, tmp_path, "-m", str(md))
     assert any(f["title"].startswith("No recognised fields") for f in findings(rep))
 
@@ -119,7 +120,7 @@ def test_huge_sparse_files(tmp_path):
 def test_symlink_loop_and_broken_link(tmp_path):
     root = tmp_path / "ds"
     (root / "sub").mkdir(parents=True)
-    (root / "sub" / "data.csv").write_text("a\n1\n")
+    (root / "sub" / "data.csv").write_text("a\n1\n", encoding="utf-8")
     os.symlink(root, root / "sub" / "loop")          # directory loop
     os.symlink(root / "nowhere.csv", root / "dangling.csv")
     rep = check(root, tmp_path)
@@ -132,21 +133,21 @@ def test_unicode_and_odd_paths(tmp_path):
     (root / "données 🧪").mkdir(parents=True)
     (root / "données 🧪" / "résultats.csv").write_text("é,ü\n1,2\n", encoding="utf-8")
     (root / "été.csv").write_text("a\n1\n")                  # NFD and NFC mixed
-    (root / ("x" * 200 + ".csv")).write_text("a\n1\n")
-    (root / "-leading-dash.txt").write_text("hi")
+    (root / ("x" * 200 + ".csv")).write_text("a\n1\n", encoding="utf-8")
+    (root / "-leading-dash.txt").write_text("hi", encoding="utf-8")
     rep = check(root, tmp_path)
     names = [f for f in findings(rep) if f["check"] == "naming"]
     assert any("non-ASCII" in f["title"] for f in names)
     assert any("longer than" in f["title"] for f in names)
 
 
-@pytest.mark.skipif(os.geteuid() == 0, reason="root ignores file permissions")
+@pytest.mark.skipif(sys.platform == "win32" or os.geteuid() == 0, reason="root ignores file permissions")
 def test_unreadable_file_and_folder(tmp_path):
     root = tmp_path / "ds"
     (root / "locked").mkdir(parents=True)
-    (root / "locked" / "x.csv").write_text("a\n1\n")
+    (root / "locked" / "x.csv").write_text("a\n1\n", encoding="utf-8")
     secret = root / "secret.csv"
-    secret.write_text("a\n1\n")
+    secret.write_text("a\n1\n", encoding="utf-8")
     secret.chmod(0)
     (root / "locked").chmod(0)
     try:
@@ -161,15 +162,15 @@ def test_unreadable_file_and_folder(tmp_path):
 def test_bad_cli_arguments(tmp_path, capsys):
     assert main(["check", str(tmp_path / "missing"), "-t", "zenodo"]) == 2
     f = tmp_path / "file.txt"
-    f.write_text("x")
+    f.write_text("x", encoding="utf-8")
     assert main(["check", str(f), "-t", "zenodo"]) == 2
 
 
-@pytest.mark.skipif(os.geteuid() == 0, reason="root ignores file permissions")
+@pytest.mark.skipif(sys.platform == "win32" or os.geteuid() == 0, reason="root ignores file permissions")
 def test_unwritable_output_and_manifest(tmp_path, capsys):
     root = tmp_path / "ds"
     root.mkdir()
-    (root / "a.csv").write_text("a\n1\n")
+    (root / "a.csv").write_text("a\n1\n", encoding="utf-8")
     root.chmod(0o555)
     try:
         assert main(["check", str(root), "-t", "zenodo", "--write-manifest"]) == 2
